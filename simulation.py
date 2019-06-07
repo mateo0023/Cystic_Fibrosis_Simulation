@@ -695,9 +695,12 @@ class AirwayModel:
 
     # Eq 8
     def fn_dATP(self, step=1):
-        """ATP rate of change in micro-Molar per minute (muM / min)"""
+        """
+        ATP rate of change in micro-Molar per minute (muM / min)
+        REMOVED THE H^-1 TO ALIGN THE CONSTANTS
+        """
 
-        return self.co.J_atp / self.data["H"][step-1] - self.co.V_1_max * self.data["ATP"][step-1] / (
+        return self.co.J_atp - self.co.V_1_max * self.data["ATP"][step-1] / (
                 self.co.K_1_m + self.data["ATP"][step-1]) \
                - self.co.V_2_max * self.data["ATP"][step-1] / (self.co.K_2_m + self.data["ATP"][step-1]) \
                - self.co.V_3_max * self.data["ATP"][step-1] / (self.co.K_3_m + self.data["ATP"][step-1]) \
@@ -713,7 +716,10 @@ class AirwayModel:
 
     # Eq 9
     def fn_dADP(self, step=1):
-        """ADP rate of change in micro-Molar per minute (muM / min)"""
+        """
+        ADP rate of change in micro-Molar per minute (muM / min)
+        REMOVED THE H^-1 TO ALIGN THE CONSTANTS
+        """
 
         return self.co.J_adp / self.data['H'][step-1] \
                + self.co.V_1_max * self.data["ATP"][step-1] / (self.co.K_1_m + self.data["ATP"][step-1]) \
@@ -726,11 +732,14 @@ class AirwayModel:
                        + self.co.K_F_atp / self.data["ATP"][step-1] + self.co.K_F_amp / self.data["AMP"][step-1]) \
                + self.co.V_B_max / (1 + (self.co.K_B_adp / self.data["ADP"][step-1]) ** 2) \
                - 2 * self.co.V_B_max / (1 + self.co.K_B_adp / self.data["ADP"][step-1]) \
-               - self.data["ADP"][step-1] * self.data['dH'][step-1] / self.data["H"][step-1]
+               - self.data["ADP"][step-1] * self.data['dH'][step-1]
 
     # Eq 10
     def fn_dAMP(self, step=1):
-        """AMP's apical rate of change in micro-Molar per minute (muM / min)"""
+        """
+        AMP's apical rate of change in micro-Molar per minute (muM / min)
+        REMOVED THE H^-1 TO ALIGN THE CONSTANTS
+        """
 
         return self.data['dH'][step-1] * (self.data['AMP'][step-1] / self.data['H'][step-1]) \
                - self.co.V_8_max * self.data['AMP'][step-1] / (
@@ -753,7 +762,7 @@ class AirwayModel:
                + self.co.V_10_max * self.data["ATP"][step-1] / (self.co.K_10_m + self.data["ATP"][step-1]) \
                + self.co.V_5_max * self.data["ATP"][step-1] / (self.co.K_5_m + self.data["ATP"][step-1]) \
                + self.co.V_4_max / (self.co.K_4_m + self.data["ADP"][step-1]) \
-               + self.co.J_amp / self.data["H"][step-1]
+               + self.co.J_amp
 
     # Eq 11
     def fn_dADO(self, step=1):
@@ -834,7 +843,7 @@ def runAll(init_d=None, save_extra=True, sub_dir=SUB_DIR):
         try:
             gen_data.fn_run(step)
         except:
-            print('Unexpected error', sys.exc_info()[0])
+            print('Unexpected error at step', i, '\n\t', sys.exc_info()[0:2])
             d_extr['err'] = [sys.exc_info()[0], step, None]
             # Drop the unfilled rows, they consume space and just complicate things.
             gen_data.drop(labels=range(i+1, gen_data.max_steps))
