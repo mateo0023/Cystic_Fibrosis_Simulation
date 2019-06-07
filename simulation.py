@@ -163,10 +163,8 @@ class AirwayModel:
         return str(self.data)
 
     # Again, to make the pd.DataFrame more accessible.
-    def drop(self, labels=None, axis=0,
-             columns=None, level=None, inplace=False, errors='raise'):
-        return self.data.drop(labels=labels, axis=axis, columns=columns, level=level, inplace=inplace,
-                              errors=errors)
+    def drop(self, labels=None, axis=0):
+        return self.data.drop(labels=labels, axis=axis)
 
     def to_cons(self, activity):
         """Return: activity / self.co.GAMMA = concentration"""
