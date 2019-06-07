@@ -163,9 +163,9 @@ class AirwayModel:
         return str(self.data)
 
     # Again, to make the pd.DataFrame more accessible.
-    def drop(self, labels=None, axis=0, index=None,
+    def drop(self, labels=None, axis=0,
              columns=None, level=None, inplace=False, errors='raise'):
-        return self.data.drop(labels=labels, axis=axis, index=index, columns=columns, level=level, inplace=inplace,
+        return self.data.drop(labels=labels, axis=axis, columns=columns, level=level, inplace=inplace,
                               errors=errors)
 
     def to_cons(self, activity):
