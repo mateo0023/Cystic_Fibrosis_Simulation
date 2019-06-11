@@ -30,10 +30,11 @@ class AirwayModel:
 
     __init__(self, init_data):
         :arg init_data, a dictionary with:
-            :var 'max_steps': How long with the simulation be.
-            :var 'H': initial water height (meters)
-            :var Molar concentration for all the relevant ions (mM)
-            :var Concentrations for all nucleotides (ATP, ..., ADO, INO) in muM (micro-moles)
+                :var 'max_steps': How long with the simulation be.
+                :var 'H': initial water height (meters)
+                :var Molar concentration for all the relevant ions (mM)
+                :var Concentrations for all nucleotides (ATP, ..., ADO, INO) in muM (micro-moles)
+             else     , pd.DataFrame, with all of the essential variables.
         :exception if there's an issue loading the CSV file, the program will exit with code 3.
     fn_run(self, step):
         :arg step=1: is the step to load the values to, by default will load the values after the initial.
@@ -44,8 +45,14 @@ class AirwayModel:
                  'aJ_Na', 'pJ_Na', 'aJ_K', 'pJ_K', 'aJ_Cl', 'pJ_Cl', 'J_co', 'J_pump',
                  'bJ_Cl', 'bJ_K', 'daV', 'dbV', 'aV', 'bV', 'tV', 'aI', 'bI', 'pI',
                  'p_CaCC', 'p_CFTR', 'p_ENaC', 'p_BK', 'p_CaKC',
-                 'p_CaCC_rate', 'p_CFTR_rate', 'p_ENaC_rate', 'p_BK_rate', 'p_CaKC_rate',
                  'ATP', 'dATP', 'ADP', 'dADP', 'AMP', 'dAMP', 'ADO', 'dADO', 'INO', 'dINO']
+
+    # Essential variables, necessary to run the program
+    essentials = ['Time (min)', 'H', 'dH', 'OSM_a', 'OSM_c', 'aNa', 'aCl', 'aK', 'cNa', 'cCl', 'cK',
+                  'aJ_Na', 'pJ_Na', 'aJ_K', 'pJ_K', 'aJ_Cl', 'pJ_Cl', 'J_co', 'J_pump',
+                  'bJ_Cl', 'bJ_K', 'daV', 'dbV', 'aV', 'bV', 'tV', 'aI', 'bI', 'pI',
+                  'p_CaCC', 'p_CFTR', 'p_ENaC', 'p_BK', 'p_CaKC',
+                  'ATP', 'dATP', 'ADP', 'dADP', 'AMP', 'dAMP', 'ADO', 'dADO', 'INO', 'dINO']
 
     # Separated variables into sections
     apical_ions = ['aNa', 'aCl', 'aK']
@@ -75,22 +82,24 @@ class AirwayModel:
 
         :param init_data: is a dictionary with the initial values.
         """
-        if init_data is None:
-            self.inputVals()
-        else:
-            try:
-                self.max_steps = int(init_data['max_steps'])
-                # Here we are creating the data-frame from the list of 'self.variables'
-                self.data = pd.DataFrame(np.zeros((self.max_steps, len(self.variables))), columns=self.variables)
+        if init_data is dict and self.isEssential(init_data):
+            self.max_steps = int(init_data['max_steps'])
+            # Here we are creating the data-frame from the list of 'self.variables'
+            self.data = pd.DataFrame(np.zeros((self.max_steps, len(self.variables))), columns=self.variables)
 
-                self.time_frame = float(init_data['time_frame'])
-                self.isCF = bool(init_data['CF'])
+            self.time_frame = float(init_data['time_frame'])
+            self.isCF = bool(init_data['CF'])
 
-                for ion in self.initial_vars[2:-1]:
-                    self.data[ion][0] = np.absolute(float(init_data[ion]))
-            except KeyError or TypeError or ValueError:
-                # If there's any error ask the user to input the values
+            for ion in self.initial_vars[2:-1]:
+                self.data[ion][0] = np.absolute(float(init_data[ion]))
+        elif init_data is pd.DataFrame:
+            if self.isEssential(init_data):
+                self.loadFromDataFrame(init_data)
+            else:
+                print('DataFrame is not in the correct format')
                 self.inputVals()
+        else:
+            self.inputVals()
 
         # Set the fn_run() and constants to the corresponding mode, CF or NL
         if self.isCF:
@@ -100,55 +109,47 @@ class AirwayModel:
             self.fn_run = self.fn_run_NL
             self.co = co_NL
 
-        self.data['Time (min)'][0] = 0
-        self.data["OSM_a"][0] = self.co.PHI * (
-                self.data["aNa"][0] + self.data["aK"][0] + self.data["aCl"][0] + self.co.A_ACT_OI) / self.co.GAMMA
-        self.data["OSM_c"][0] = self.co.PHI * (
-                self.data["cNa"][0] + self.data["cK"][0] + self.data["cCl"][0] + self.co.C_ACT_OI) / self.co.GAMMA
-        self.data["dH"][0] = self.fn_dH(1)
+        if not self.isFull():
+            self.data['Time (min)'][0] = 0
+            self.data["OSM_a"][0] = self.fn_OSM_a()
+            self.data["OSM_c"][0] = self.fn_OSM_c()
+            self.data["dH"][0] = self.fn_dH()
 
-        self.data["aV"][0] = self.fn_voltage('a')
-        self.data["bV"][0] = self.fn_voltage('b')
-        self.data["tV"][0] = self.data["bV"][0] - self.data["aV"][0]
+            self.data["aV"][0] = self.fn_voltage('a')
+            self.data["bV"][0] = self.fn_voltage('b')
+            self.data["tV"][0] = self.data["bV"][0] - self.data["aV"][0]
 
-        self.data["p_CaCC"][0] = self.fn_p_CaCC(1)
-        if not self.isCF:
-            self.data["p_CFTR"][0] = self.fn_p_CFTR(1)
-            self.data["p_ENaC"][0] = self.fn_p_ENaC(1)
-        else:
-            self.data["p_ENaC"][0] = self.fn_p_ENaC_CF(1)
-        self.data["p_BK"][0] = self.fn_p_BK(1)
-        self.data["p_CaKC"][0] = self.fn_p_CaKC(1)
+            self.data["p_CaCC"][0] = self.fn_p_CaCC(1)
+            if self.isCF:
+                self.data["p_ENaC"][0] = self.fn_p_ENaC_CF()
+            else:
+                self.data["p_CFTR"][0] = self.fn_p_CFTR()
+                self.data["p_ENaC"][0] = self.fn_p_ENaC()
+            self.data["p_BK"][0] = self.fn_p_BK()
+            self.data["p_CaKC"][0] = self.fn_p_CaKC()
 
-        self.data["p_CaCC_rate"][0] = self.co.CACC_PERM_MAX / self.data["p_CaCC"][0]
-        if not self.isCF:
-            self.data["p_CFTR_rate"][0] = self.co.CFTR_PERM_MAX / self.data["p_CFTR"][0]
-        self.data["p_ENaC_rate"][0] = self.co.ENAC_PERM_MAX / self.data["p_ENaC"][0]
-        self.data["p_BK_rate"][0] = self.co.BK_PERM_MAX / self.data["p_BK"][0]
-        self.data["p_CaKC_rate"][0] = self.co.CAKC_PERM_MAX / self.data["p_CaKC"][0]
+            self.data["aJ_Na"][0] = self.fn_aJ_Na()
+            self.data["pJ_Na"][0] = self.fn_pJ_Na()
+            self.data["aJ_K"][0] = self.fn_aJ_K()
+            self.data["pJ_K"][0] = self.fn_pJ_K()
+            self.data["bJ_K"][0] = self.fn_bJ_K()
+            self.data["aJ_Cl"][0] = self.fn_aJ_Cl()
+            self.data["pJ_Cl"][0] = self.fn_pJ_Cl()
+            self.data["bJ_Cl"][0] = self.fn_bJ_Cl()
+            self.data["J_co"][0] = self.fn_J_co()
+            self.data["J_pump"][0] = self.fn_J_pump()
 
-        self.data["aJ_Na"][0] = self.fn_aJ_Na(1)
-        self.data["pJ_Na"][0] = self.fn_pJ_Na(1)
-        self.data["aJ_K"][0] = self.fn_aJ_K(1)
-        self.data["pJ_K"][0] = self.fn_pJ_K(1)
-        self.data["bJ_K"][0] = self.fn_bJ_K(1)
-        self.data["aJ_Cl"][0] = self.fn_aJ_Cl(1)
-        self.data["pJ_Cl"][0] = self.fn_pJ_Cl(1)
-        self.data["bJ_Cl"][0] = self.fn_bJ_Cl(1)
-        self.data["J_co"][0] = self.fn_J_co(1)
-        self.data["J_pump"][0] = self.fn_J_pump(1)
+            self.data["aI"][0] = self.fn_aI()
+            self.data["bI"][0] = self.fn_bI()
+            self.data["pI"][0] = self.fn_pI()
+            self.data["daV"][0] = self.fn_daV()
+            self.data["dbV"][0] = self.fn_dbV()
 
-        self.data["aI"][0] = self.co.F_RT * (- self.data["aJ_Na"][0] + self.data["aJ_Cl"][0] - self.data["aJ_K"][0])
-        self.data["bI"][0] = self.co.F_RT * (- self.data["J_pump"][0] + self.data["bJ_Cl"][0] - self.data["aJ_K"][0])
-        self.data["pI"][0] = self.co.F_RT * (- self.data["pJ_Na"][0] + self.data["pJ_Cl"][0] - self.data["pJ_K"][0])
-        self.data["daV"][0] = (self.data["pI"][0] - self.data["aI"][0]) / (self.co.A_CAPACI * 100)
-        self.data["dbV"][0] = - (self.data["pI"][0] + self.data["bI"][0]) / (self.co.B_CAPACI * 100)
-
-        self.data["dATP"][0] = self.fn_dATP(1) / 60  # Remember that it's in min
-        self.data["dADP"][0] = self.fn_dADP(1) / 60  # Remember that it's in min
-        self.data["dAMP"][0] = self.fn_dAMP(1) / 60  # Remember that it's in min
-        self.data["dADO"][0] = self.fn_dADO(1) / 60  # Remember that it's in min
-        self.data["dINO"][0] = self.fn_dINO(1) / 60  # Remember that it's in min
+            self.data["dATP"][0] = self.fn_dATP() / 60  # Remember that it's in min
+            self.data["dADP"][0] = self.fn_dADP() / 60  # Remember that it's in min
+            self.data["dAMP"][0] = self.fn_dAMP() / 60  # Remember that it's in min
+            self.data["dADO"][0] = self.fn_dADO() / 60  # Remember that it's in min
+            self.data["dINO"][0] = self.fn_dINO() / 60  # Remember that it's in min
 
     def __getitem__(self, item):
         return self.data[item]
@@ -162,7 +163,53 @@ class AirwayModel:
         self.data object which is a pd.DataFrame"""
         return str(self.data)
 
-    # Again, to make the pd.DataFrame more accessible.
+    @staticmethod
+    def isEssential(data=None):
+        """
+        Will check whether the data satisfies conditions as an initializer.
+        :param data: Should be either of the accepted data formats in the __init__ method with the corresponding keys
+                or it will return False
+        :return: True:  if the pd.DataFrame contains all of the correct keys in AirwayModel.essentials
+                        if the dictionary contains all of the keys in AirwayModel.initial_values
+                False:  otherwise.
+        """
+        if type(data) is pd.DataFrame:
+            for v in data:
+                if v not in AirwayModel.essentials and v != 'Unnamed: 0':
+                    return False
+            return True
+        elif type(data) is dict:
+            for v in AirwayModel.initial_vars:
+                if v not in data:
+                    return False
+            return True
+        else:
+            return False
+
+    def loadFromDataFrame(self, d):
+        """
+        Will load the self.data from a pd.DataFrame
+        :param d: The dataFrame
+        :return:
+        """
+        self.data = d
+        self.max_steps = len(d)
+        self.isCF = not bool(sum(d['p_CFTR']))
+        self.time_frame = d['Time (min)'][0] / 60
+
+    def isFull(self):
+        for k in self.data:
+            if k not in self.essentials or k == 'Time (min)':
+                pass
+            elif k == 'J_co':  # Temporal until J_co gets fixed
+                pass
+            elif k == 'p_CFTR' and self.isCF:
+                pass
+            elif self.data[k][0] == 0:
+                return False
+        return True
+
+    # To make the pd.DataFrame more accessible.
     def drop(self, labels=None, axis=0):
         return self.data.drop(labels=labels, axis=axis)
 
@@ -294,23 +341,21 @@ class AirwayModel:
 
         self.data['Time (min)'][step] = step * self.time_frame / 60
         self.data["dH"][step] = self.fn_dH(step)
-        self.data["H"][step] = self.data["H"][step - 1] + self.data["dH"][step] * self.time_frame
+        self.data["H"][step] = self.data["H"][step-1] + self.data["dH"][step] * self.time_frame
         self.data["OSM_a"][step] = self.fn_OSM_a(step)
         self.data["OSM_c"][step] = self.fn_OSM_c(step)
 
-        self.data["aNa"][step] = self.data["aNa"][step - 1] + self.fn_daN_Na(step) * self.time_frame / \
-                                 self.data['H'][
-                                     step - 1]  # in mM
-        self.data["aCl"][step] = self.data["aCl"][step - 1] + self.fn_daN_Cl(step) * self.time_frame / \
-                                 self.data['H'][
-                                     step - 1]  # in mM
-        self.data["aK"][step] = self.data["aK"][step - 1] + self.fn_daN_K(step) * self.time_frame / self.data['H'][
-            step - 1]  # in mM
+        self.data["aNa"][step] = self.data["aNa"][step-1] + self.fn_daN_Na(step) * self.time_frame \
+                                                            / self.data['H'][step-1]  # in mM
+        self.data["aCl"][step] = self.data["aCl"][step-1] + self.fn_daN_Cl(step) * self.time_frame \
+                                                            / self.data['H'][step-1]  # in mM
+        self.data["aK"][step] = self.data["aK"][step-1] + self.fn_daN_K(step) * self.time_frame \
+                                                            / self.data['H'][step-1]  # in mM
 
         # It's now in mol / m^2
-        self.data["cNa"][step] = self.data["cNa"][step - 1] + self.fn_dcN_Na(step) * self.time_frame
-        self.data["cCl"][step] = self.data["cCl"][step - 1] + self.fn_dcN_Cl(step) * self.time_frame
-        self.data["cK"][step] = self.data["cK"][step - 1] + self.fn_dcN_K(step) * self.time_frame
+        self.data["cNa"][step] = self.data["cNa"][step-1] + self.fn_dcN_Na(step) * self.time_frame
+        self.data["cCl"][step] = self.data["cCl"][step-1] + self.fn_dcN_Cl(step) * self.time_frame
+        self.data["cK"][step] = self.data["cK"][step-1] + self.fn_dcN_K(step) * self.time_frame
 
         self.data["aJ_Na"][step] = self.fn_aJ_Na(step)
         self.data["aJ_Cl"][step] = self.fn_aJ_Cl(step)
@@ -325,10 +370,10 @@ class AirwayModel:
         self.data["bJ_K"][step] = self.fn_bJ_K(step)
 
         self.data["daV"][step] = self.fn_daV(step)
-        self.data["aV"][step] = self.data["aV"][step - 1] + self.data["daV"][step] * self.time_frame
+        self.data["aV"][step] = self.data["aV"][step-1] + self.data["daV"][step] * self.time_frame
         self.data["dbV"][step] = self.fn_dbV(step)
-        self.data["bV"][step] = self.data["bV"][step - 1] + self.data["dbV"][step] * self.time_frame
-        self.data["tV"][step] = self.data["bV"][step - 1] - self.data["aV"][step]
+        self.data["bV"][step] = self.data["bV"][step-1] + self.data["dbV"][step] * self.time_frame
+        self.data["tV"][step] = self.data["bV"][step-1] - self.data["aV"][step]
         self.data["aI"][step] = self.fn_aI(step)
         self.data["pI"][step] = self.fn_pI(step)
         self.data["bI"][step] = self.fn_bI(step)
@@ -339,23 +384,16 @@ class AirwayModel:
         self.data["p_BK"][step] = self.fn_p_BK(step)
         self.data["p_CaKC"][step] = self.fn_p_CaKC(step)
 
-        # Will be to know how far they are from max open (closer to '1')
-        self.data["p_CaCC_rate"][step] = self.co.CACC_PERM_MAX / self.data["p_CaCC"][step]
-        self.data["p_CFTR_rate"][step] = self.co.CFTR_PERM_MAX / self.data["p_CFTR"][step]
-        self.data["p_ENaC_rate"][step] = self.co.ENAC_PERM_MAX / self.data["p_ENaC"][step]
-        self.data["p_BK_rate"][step] = self.co.BK_PERM_MAX / self.data["p_BK"][step]
-        self.data["p_CaKC_rate"][step] = self.co.CAKC_PERM_MAX / self.data["p_CaKC"][step]
-
         self.data["dATP"][step] = self.fn_dATP(step) / 60  # To get it to muM/sec instead of muM/min
-        self.data["ATP"][step] = self.data["ATP"][step - 1] + self.data["dATP"][step] * self.time_frame
+        self.data["ATP"][step] = self.data["ATP"][step-1] + self.data["dATP"][step] * self.time_frame
         self.data["dADP"][step] = self.fn_dADP(step) / 60  # To get it to muM/sec instead of muM/min
         self.data["ADP"][step] = self.data["ADP"][step] + self.data["dADP"][step] * self.time_frame
         self.data["dAMP"][step] = self.fn_dAMP(step) / 60  # To get it to muM/sec instead of muM/min
-        self.data["AMP"][step] = self.data["AMP"][step - 1] + self.data["dAMP"][step] * self.time_frame
+        self.data["AMP"][step] = self.data["AMP"][step-1] + self.data["dAMP"][step] * self.time_frame
         self.data["dADO"][step] = self.fn_dADO(step) / 60  # To get it to muM/sec instead of muM/min
-        self.data["ADO"][step] = self.data["ADO"][step - 1] + self.data["dADO"][step] * self.time_frame
+        self.data["ADO"][step] = self.data["ADO"][step-1] + self.data["dADO"][step] * self.time_frame
         self.data["dINO"][step] = self.fn_dINO(step) / 60  # To get it to muM/sec instead of muM/min
-        self.data["INO"][step] = self.data["INO"][step - 1] + self.data["dINO"][step] * self.time_frame
+        self.data["INO"][step] = self.data["INO"][step-1] + self.data["dINO"][step] * self.time_frame
 
     # Run Eq in Cystic Fibrosis
     def fn_run_CF(self, step=1):
@@ -369,23 +407,23 @@ class AirwayModel:
 
         self.data['Time (min)'][step] = step * self.time_frame / 60
         self.data["dH"][step] = self.fn_dH(step)
-        self.data["H"][step] = self.data["H"][step - 1] + self.data["dH"][step] * self.time_frame
+        self.data["H"][step] = self.data["H"][step-1] + self.data["dH"][step] * self.time_frame
         self.data["OSM_a"][step] = self.fn_OSM_a(step)
         self.data["OSM_c"][step] = self.fn_OSM_c(step)
 
-        self.data["aNa"][step] = self.data["aNa"][step - 1] + self.fn_daN_Na(step) * self.time_frame / \
+        self.data["aNa"][step] = self.data["aNa"][step-1] + self.fn_daN_Na(step) * self.time_frame / \
                                  self.data['H'][
-                                     step - 1]  # in mM
-        self.data["aCl"][step] = self.data["aCl"][step - 1] + self.fn_daN_Cl(step) * self.time_frame / \
+                                     step-1]  # in mM
+        self.data["aCl"][step] = self.data["aCl"][step-1] + self.fn_daN_Cl(step) * self.time_frame / \
                                  self.data['H'][
-                                     step - 1]  # in mM
-        self.data["aK"][step] = self.data["aK"][step - 1] + self.fn_daN_K(step) * self.time_frame / self.data['H'][
-            step - 1]  # in mM
+                                     step-1]  # in mM
+        self.data["aK"][step] = self.data["aK"][step-1] + self.fn_daN_K(step) * self.time_frame / self.data['H'][
+            step-1]  # in mM
 
         # It's now in mol / m^2
-        self.data["cNa"][step] = self.data["cNa"][step - 1] + self.fn_dcN_Na(step) * self.time_frame
-        self.data["cCl"][step] = self.data["cCl"][step - 1] + self.fn_dcN_Cl(step) * self.time_frame
-        self.data["cK"][step] = self.data["cK"][step - 1] + self.fn_dcN_K(step) * self.time_frame
+        self.data["cNa"][step] = self.data["cNa"][step-1] + self.fn_dcN_Na(step) * self.time_frame
+        self.data["cCl"][step] = self.data["cCl"][step-1] + self.fn_dcN_Cl(step) * self.time_frame
+        self.data["cK"][step] = self.data["cK"][step-1] + self.fn_dcN_K(step) * self.time_frame
 
         self.data["aJ_Na"][step] = self.fn_aJ_Na(step)
         self.data["aJ_Cl"][step] = self.fn_aJ_Cl(step)
@@ -400,10 +438,10 @@ class AirwayModel:
         self.data["bJ_K"][step] = self.fn_bJ_K(step)
 
         self.data["daV"][step] = self.fn_daV(step)
-        self.data["aV"][step] = self.data["aV"][step - 1] + self.data["daV"][step] * self.time_frame
+        self.data["aV"][step] = self.data["aV"][step-1] + self.data["daV"][step] * self.time_frame
         self.data["dbV"][step] = self.fn_dbV(step)
-        self.data["bV"][step] = self.data["bV"][step - 1] + self.data["dbV"][step] * self.time_frame
-        self.data["tV"][step] = self.data["bV"][step - 1] - self.data["aV"][step]
+        self.data["bV"][step] = self.data["bV"][step-1] + self.data["dbV"][step] * self.time_frame
+        self.data["tV"][step] = self.data["bV"][step-1] - self.data["aV"][step]
         self.data["aI"][step] = self.fn_aI(step)
         self.data["pI"][step] = self.fn_pI(step)
         self.data["bI"][step] = self.fn_bI(step)
@@ -413,22 +451,16 @@ class AirwayModel:
         self.data["p_BK"][step] = self.fn_p_BK(step)
         self.data["p_CaKC"][step] = self.fn_p_CaKC(step)
 
-        # Will be to know how far they are from max open (closer to '1')
-        self.data["p_CaCC_rate"][step] = self.co.CACC_PERM_MAX / self.data["p_CaCC"][step]
-        self.data["p_ENaC_rate"][step] = self.co.ENAC_PERM_MAX / self.data["p_ENaC"][step]
-        self.data["p_BK_rate"][step] = self.co.BK_PERM_MAX / self.data["p_BK"][step]
-        self.data["p_CaKC_rate"][step] = self.co.CAKC_PERM_MAX / self.data["p_CaKC"][step]
-
         self.data["dATP"][step] = self.fn_dATP(step) / 60  # To get it to muM/sec instead of muM/min
-        self.data["ATP"][step] = self.data["ATP"][step - 1] + self.data["dATP"][step] * self.time_frame
+        self.data["ATP"][step] = self.data["ATP"][step-1] + self.data["dATP"][step] * self.time_frame
         self.data["dADP"][step] = self.fn_dADP(step) / 60  # To get it to muM/sec instead of muM/min
         self.data["ADP"][step] = self.data["ADP"][step] + self.data["dADP"][step] * self.time_frame
         self.data["dAMP"][step] = self.fn_dAMP(step) / 60  # To get it to muM/sec instead of muM/min
-        self.data["AMP"][step] = self.data["AMP"][step - 1] + self.data["dAMP"][step] * self.time_frame
+        self.data["AMP"][step] = self.data["AMP"][step-1] + self.data["dAMP"][step] * self.time_frame
         self.data["dADO"][step] = self.fn_dADO(step) / 60  # To get it to muM/sec instead of muM/min
-        self.data["ADO"][step] = self.data["ADO"][step - 1] + self.data["dADO"][step] * self.time_frame
+        self.data["ADO"][step] = self.data["ADO"][step-1] + self.data["dADO"][step] * self.time_frame
         self.data["dINO"][step] = self.fn_dINO(step) / 60  # To get it to muM/sec instead of muM/min
-        self.data["INO"][step] = self.data["INO"][step - 1] + self.data["dINO"][step] * self.time_frame
+        self.data["INO"][step] = self.data["INO"][step-1] + self.data["dINO"][step] * self.time_frame
 
     # Eq 1
     def fn_dH(self, step=1):
@@ -512,19 +544,19 @@ class AirwayModel:
     # Eq 4.4
     def fn_aJ_H2O(self, step=1):
         """moles per second per meter squared - moles / (sec m^2)"""
-        return self.co.A_PERM_H20 * (self.data["OSM_c"][step-1] - self.data["OSM-a"][step-1])
+        return self.co.A_PERM_H20 * (self.data["OSM_c"][step-1] - self.data["OSM_a"][step-1])
 
     # Eq 4.5
     def fn_bJ_Cl(self, step=1):
         """moles per second per meter squared - moles / (sec m^2)"""
-        return - self.co.P_PERM_CL * self.co.F_RT * self.data["bV"][step-1] * (np.exp(self.co.F_RT *
+        return - self.co.P_PERM_CL * self.co.F_RT * self.data["bV"][step-1] / (np.exp(self.co.F_RT *
                                                                                       self.data["bV"][step-1]) - 1) \
                * (self.data['cCl'][step-1] - self.co.B_ACT_CL * np.exp(self.co.F_RT * self.data["bV"][step-1]))
 
     # Eq 4.6
     def fn_bJ_K(self, step=1):
         """moles per second per meter squared - moles / (sec m^2)"""
-        return - self.co.P_PERM_K * self.co.F_RT * self.data["bV"][step-1] / (np.exp(self.co.F_RT
+        return self.co.P_PERM_K * self.co.F_RT * self.data["bV"][step-1] / (np.exp(self.co.F_RT
                                                                                      * self.data["bV"][step-1]) - 1) \
                * (self.co.B_ACT_K - self.data["cK"][step-1] * np.exp(self.co.F_RT * self.data["bV"][step-1]))
 
@@ -535,8 +567,8 @@ class AirwayModel:
                                                                  + self.co.K_Na_In_pump
                                                                  * (1 + self.data['cK'][step-1]
                                                                         / self.co.K_K_in_pump))) ** 3 \
-               * self.co.B_ACT_K / (self.co.B_ACT_K +
-                                    self.co.K_K_ext_pump * (1 + self.co.B_ACT_NA / self.co.K_Na_ext_pump)) ** 2
+               * (self.co.B_ACT_K / (self.co.B_ACT_K +
+                                     self.co.K_K_ext_pump * (1 + self.co.B_ACT_NA / self.co.K_Na_ext_pump))) ** 2
 
     # Eq 4.8: System
     def fn_J_co_sys(self, step=1):
@@ -593,29 +625,23 @@ class AirwayModel:
     # Eq 4.10
     def fn_pJ_Na(self, step=1):
         """Paracellular flow of for the Sodium ion, in moles per sec per meters squared - mole / (sec m^2)"""
-        return self.co.P_PERM_NA * (self.co.F_RT * self.data["tV"][step-1] /
-                                    ((self.co.R * self.co.TEMP) * (np.exp(self.co.F_RT * self.data["tV"][step-1] /
-                                                                          (self.co.R * self.co.TEMP)) - 1))) * (
-                       self.co.B_CONS_NA - self.data["aNa"][step-1] *
-                       np.exp(self.co.F_RT * self.data["tV"][step-1] / (self.co.R * self.co.TEMP)))
+        return self.co.P_PERM_NA * self.co.F_RT * self.data["tV"][step-1] \
+               / (np.exp(self.co.F_RT * self.data["tV"][step-1]) - 1) \
+               * (self.co.B_CONS_NA - self.data["aNa"][step-1] * np.exp(self.co.F_RT * self.data["tV"][step-1]))
 
     # Eq 4.11
     def fn_pJ_K(self, step=1):
         """Paracellular flow of for the Potassium ion, in moles per sec per meters squared - mole / (sec m^2)"""
-        return self.co.P_PERM_K * (self.co.F_RT * self.data["tV"][step-1] /
-                                   ((self.co.R * self.co.TEMP) * (np.exp(self.co.F_RT * self.data["tV"][step-1] /
-                                                                         (self.co.R * self.co.TEMP)) - 1))) * (
-                       self.co.B_CONS_K - self.data["aK"][step-1] *
-                       np.exp(self.co.F_RT * self.data["tV"][step-1] / (self.co.R * self.co.TEMP)))
+        return self.co.P_PERM_K * self.co.F_RT * self.data["tV"][step-1] \
+               / (np.exp(self.co.F_RT * self.data["tV"][step-1]) - 1) \
+               * (self.co.B_CONS_K - self.data["aK"][step-1] * np.exp(self.co.F_RT * self.data["tV"][step-1]))
 
     # Eq 4.12
     def fn_pJ_Cl(self, step=1):
         """Paracellular flow of for the Chloride ion, in moles per sec per meters squared - mole / (sec m^2)"""
-        return -self.co.P_PERM_CL * (self.co.F_RT * self.data["tV"][step-1] /
-                                     ((self.co.R * self.co.TEMP) * (np.exp(self.co.F_RT * self.data["tV"][step-1] /
-                                                                           (self.co.R * self.co.TEMP)) - 1))) * (
-                       self.data["aCl"][step-1] - self.co.B_CONS_CL *
-                       np.exp(self.co.F_RT * self.data["tV"][step-1] / (self.co.R * self.co.TEMP)))
+        return - self.co.P_PERM_CL * self.co.F_RT * self.data["tV"][step-1] \
+               / (np.exp(self.co.F_RT * self.data["tV"][step-1]) - 1) \
+               * (self.data["aCl"][step-1] - self.co.B_CONS_CL * np.exp(self.co.F_RT * self.data["tV"][step-1]))
 
     # Eq 5.1.1
     def fn_p_CaCC(self, step=1):
@@ -623,7 +649,7 @@ class AirwayModel:
         Returns the permeability of the CaCC Channel.
         :return: in meters per second (m / sec)
         """
-        return self.co.CACC_PERM_MAX / (1 + self.co.CACC_ATP_AT_HALF_PERM / self.data["ATP"][step - 1])
+        return self.co.CACC_PERM_MAX / (1 + self.co.CACC_ATP_AT_HALF_PERM / self.data["ATP"][step-1])
 
     # Eq 5.1.2
     def fn_p_CFTR(self, step=1):
@@ -649,8 +675,8 @@ class AirwayModel:
         Now it's different for C.F.
         :return: The permeability for step in m/sec.
         """
-        return self.co.ENAC_PERM_MAX / (1 + self.co.ENAC_ATP_AT_HALF_PERM / self.data['ATP'][step-1]
-                                        + self.co.ENAC_ADO_AT_HALF_PERM / self.data['ADO'][step-1])
+        return self.co.ENAC_PERM_MAX / (1 + self.data['ATP'][step-1] / self.co.ENAC_ATP_AT_HALF_PERM
+                                        + self.data['ADO'][step-1] / self.co.ENAC_ADO_AT_HALF_PERM)
 
     # Eq 5.3 for CF
     def fn_p_ENaC_CF(self, step=1):
@@ -660,7 +686,7 @@ class AirwayModel:
         :return: The permeability for step in m/sec.
         """
 
-        return self.co.ENAC_PERM_MAX / (1 + self.co.ENAC_ATP_AT_HALF_PERM / self.data['ATP'][step - 1])
+        return self.co.ENAC_PERM_MAX / (1 + self.data['ATP'][step-1] / self.co.ENAC_ATP_AT_HALF_PERM)
 
     # Eq 5.4
     def fn_p_CaKC(self, step=1):
@@ -681,17 +707,20 @@ class AirwayModel:
     # Eq 7.1
     def fn_pI(self, step=1):
         """Will return paracellular current in A / m^2 or C / (sec m^2)"""
-        return self.co.F_RT * (- self.data["pJ_Na"][step-1] + self.data["pJ_Cl"][step-1] - self.data["pJ_K"][step-1])
+        return self.co.FARADAY * (- self.data["pJ_Na"][step-1]
+                                  + self.data["pJ_Cl"][step-1] - self.data["pJ_K"][step-1])
 
     # Eq 7.2
     def fn_aI(self, step=1):
         """Apical current in A / m^2 or C / (sec m^2)"""
-        return self.co.F_RT * (- self.data["aJ_Na"][step-1] + self.data["aJ_Cl"][step-1] - self.data["aJ_K"][step-1])
+        return self.co.FARADAY * (- self.data["aJ_Na"][step-1]
+                                  + self.data["aJ_Cl"][step-1] - self.data["aJ_K"][step-1])
 
     # Eq 7.3
     def fn_bI(self, step=1):
         """Basolateral Current in A / m^2 or C / (sec m^2)"""
-        return self.co.F_RT * (- self.data["J_pump"][step-1] + self.data["bJ_Cl"][step-1] - self.data["aJ_K"][step-1])
+        return self.co.FARADAY * (self.data["J_pump"][step-1]
+                                  + self.data["bJ_Cl"][step-1] - self.data["aJ_K"][step-1])
 
     # Eq 8
     def fn_dATP(self, step=1):
@@ -893,10 +922,10 @@ def runAll(init_d=None, save_extra=True, sub_dir=SUB_DIR):
 
 
 # Will return all the files inside a directory.
-def flsInDir(directory=SUB_DIR):
+def flsInDir(directory='.'):
     """
     Will look at all the files in a directory and collect them into a list. Will walk using the OS Library
-    :param directory: The path to the directory
+    :param directory: The path to the directory. Defaults to the current directory
     :return: A list with the paths to the files inside the directory. None if there are no files inside.
     """
     files_in = []
@@ -926,7 +955,7 @@ def deleteFolder(directory=SUB_DIR):
 
 
 # Will save the file_name.csv and file_name_extra-info.csv files into one ZIP file.
-def zipFiles(file_names=flsInDir(), zip_name=None, delete_after=False):
+def zipFiles(file_names=flsInDir(SUB_DIR), zip_name=None, delete_after=False):
     """
     Will create a zip file in the current directory which contains the files in the file_names
     :param file_names: Should be an iterable with the path and file names of the files to compress.
@@ -1009,6 +1038,7 @@ if __name__ == '__main__':
         end_t = datetime.datetime.now()
 
         zipFiles(flsInDir(SUB_DIR), delete_after=False)
+        deleteFolder()
 
         av_steps = 0
         for r in initial_values:
