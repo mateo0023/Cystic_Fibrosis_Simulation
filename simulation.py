@@ -83,7 +83,6 @@ class AirwayModel:
         :param init_data: is a dictionary with the initial values.
         """
         if type(init_data) is dict and self.isEssential(init_data):
-            print('Essential Dict')
             self.max_steps = int(init_data['max_steps'])
             # Here we are creating the data-frame from the list of 'self.variables'
             self.data = pd.DataFrame(np.zeros((self.max_steps, len(self.variables))), columns=self.variables)
@@ -95,10 +94,8 @@ class AirwayModel:
                 self.data[ion][0] = np.absolute(float(init_data[ion]))
         elif type(init_data) is pd.DataFrame:
             if self.isEssential(init_data):
-                print('Essential DataFrame')
                 self.loadFromDataFrame(init_data)
             else:
-                print('DataFrame is not in the correct format')
                 self.inputVals()
         else:
             self.inputVals()
