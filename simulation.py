@@ -93,6 +93,8 @@ class AirwayModel:
             for ion in self.initial_vars[2:-1]:
                 self.data[ion][0] = np.absolute(float(init_data[ion]))
         elif type(init_data) is pd.DataFrame:
+            if 'Unnamed: 0' in init_data:
+                init_data = init_data.drop(labels='Unnamed: 0', axis=1)
             if self.isEssential(init_data):
                 self.loadFromDataFrame(init_data)
             else:
@@ -174,7 +176,7 @@ class AirwayModel:
         """
         if type(data) is pd.DataFrame:
             for v in data:
-                if v not in AirwayModel.essentials and v != 'Unnamed: 0':
+                if v not in AirwayModel.essentials:
                     return False
             return True
         elif type(data) is dict:
