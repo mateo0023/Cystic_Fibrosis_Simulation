@@ -21,5 +21,3 @@ These files are the ones I'm using with `Python 3.4.8` at Michigan's computers.
 * Nucleotides (`ATP` -> `INO`): microM ($\mu M$ or 10^-6 Moles).
 * Cystic Fibrosis (`CF`): 1 (modeling cystic fibrosis) or 0 (normal conditions).
   * It now *has an effect on the simulations!*
-
-_You can view this in markdown for nicer format_
