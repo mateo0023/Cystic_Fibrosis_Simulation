@@ -581,18 +581,18 @@ class AirwayModel:
                 self.co.COT_Z[5] * self.co.B_ACT_CL * self.co.B_ACT_K * self.co.B_ACT_NA,
                 self.co.COT_Z[6] * self.data['cCl'][step-1]**2 * self.data['cK'][step-1] * self.data['cNa'][step-1],
                 self.co.COT_Z[7] * self.co.B_ACT_CL**2 * self.co.B_ACT_K * self.co.B_ACT_NA,
-                self.co.COT_Z[8] * self.data['cCl'][step-1]**2 * self.data['cK'][step-1] \
+                self.co.COT_Z[8] * self.data['cCl'][step-1]**2 * self.data['cK'][step-1]
                     * self.data['cNa'][step-1] * self.co.B_ACT_NA,
                 self.co.COT_Z[9] * self.data['cCl'][step-1] * self.co.B_ACT_CL**2 * self.co.B_ACT_K * self.co.B_ACT_NA,
-                self.co.COT_Z[10] * self.data['cCl'][step-1]**2 * self.data['cK'][step-1] \
+                self.co.COT_Z[10] * self.data['cCl'][step-1]**2 * self.data['cK'][step-1]
                     * self.data['cNa'][step-1] * self.co.B_ACT_CL * self.co.B_ACT_NA,
-                self.co.COT_Z[11] * self.data['cCl'][step-1] * self.data['cK'][step-1] \
+                self.co.COT_Z[11] * self.data['cCl'][step-1] * self.data['cK'][step-1]
                     * self.co.B_ACT_CL**2 * self.co.B_ACT_K * self.co.B_ACT_NA,
-                self.co.COT_Z[12] * self.data['cCl'][step-1]**2 * self.data['cK'][step-1] \
+                self.co.COT_Z[12] * self.data['cCl'][step-1]**2 * self.data['cK'][step-1]
                     * self.co.B_ACT_CL**2 * self.co.B_ACT_K * self.co.B_ACT_NA,
-                self.co.COT_Z[13] * self.data['cCl'][step-1]**2 * self.data['cK'][step-1] \
+                self.co.COT_Z[13] * self.data['cCl'][step-1]**2 * self.data['cK'][step-1]
                     * self.data['cNa'][step-1] * self.co.B_ACT_CL * self.co.B_ACT_K * self.co.B_ACT_NA,
-                self.co.COT_Z[14] * self.data['cCl'][step-1]**2 * self.data['cK'][step-1] \
+                self.co.COT_Z[14] * self.data['cCl'][step-1]**2 * self.data['cK'][step-1]
                     * self.data['cNa'][step-1] * self.co.B_ACT_CL**2 * self.co.B_ACT_K * self.co.B_ACT_NA,
                 self.co.COT_Z[15])
 
