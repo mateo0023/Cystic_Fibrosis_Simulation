@@ -37,16 +37,41 @@ K_K_ext_pump = 0.11  # Look Ref 44 for more info. ------ mM
 K_Na_ext_pump = 24.3  # Look Ref 44 for more info. ------ mM
 
 # REF 22
-COT_K_1 = 1000  # Cotransporter (Cot) off binding constant Na+. ------ mol^-1
-COT_K_2 = 0.7428  # Cot off binding constant Cl. ------ mol^-1
-COT_K_03 = 892.3  # Luminal off binding constant K. ------ mol^-1
-COT_K_I3 = 458.8  # Cytosolic off binding constant K. ------ mol^-1
-COT_K_4 = 46.71  # Cot of binding rate constant for Cl_2. ------ mol^-1
-COT_K_FF = 1824  # Cot translocation rate constant. ------ s^-1
-COT_K_BF = 2724  # Cot translocation rate constant. ------ s^-1
-COT_K_FE = 18781  # Cot translocation rate constant. ------ s^-1
-COT_K_BE = 13259  # ------ s^-1
-COT_K_ON = 1e8  # ------ mol^-1 s^-1
+# COT_K_1 = 1000  # Cotransporter (Cot) off binding constant Na+. ------ mol^-1
+# COT_K_2 = 0.7428  # Cot off binding constant Cl. ------ mol^-1
+# COT_K_03 = 892.3  # Luminal off binding constant K. ------ mol^-1
+# COT_K_I3 = 458.8  # Cytosolic off binding constant K. ------ mol^-1
+# COT_K_4 = 46.71  # Cot of binding rate constant for Cl_2. ------ mol^-1
+# COT_K_FF = 1824  # Cot translocation rate constant. ------ s^-1
+# COT_K_BF = 2724  # Cot translocation rate constant. ------ s^-1
+# COT_K_FE = 18781  # Cot translocation rate constant. ------ s^-1
+# COT_K_BE = 13259  # ------ s^-1
+# COT_K_ON = 1e8  # ------ mol^-1 s^-1
+
+# NKCC2 Cotransporter - from Benjamin-Jonson (1997)
+COT_K_Cl = 2.42  # mM
+COT_K_Na = 22.38  # mM
+COT_K_K = 234.74  # mM
+COT_K_f_empty = 37767  # s^-1
+COT_K_f_full = 1406  # s^-1
+COT_K_b_empty = 13196  # s^-1
+COT_K_b_full = 4025  # s^-1
+COT_Z = (COT_K_Cl * COT_K_K * COT_K_Na * COT_K_b_empty,
+         COT_K_Cl**2 * COT_K_K, COT_K_f_empty,
+         COT_K_Cl * COT_K_Na * COT_K_b_empty,
+         COT_K_Cl * COT_K_K * COT_K_f_empty,
+         COT_K_Na * COT_K_b_empty,
+         COT_K_Cl * COT_K_b_empty,
+         COT_K_b_empty + COT_K_b_full,
+         COT_K_f_empty + COT_K_f_full,
+         COT_K_f_full / COT_K_Na,
+         COT_K_f_full / COT_K_Cl,
+         COT_K_b_full / (COT_K_Cl * COT_K_Na),
+         COT_K_f_full / (COT_K_Cl * COT_K_K),
+         COT_K_b_full / (COT_K_Cl**2 * COT_K_K),
+         COT_K_b_full / (COT_K_Cl * COT_K_K * COT_K_Na),
+         (COT_K_b_full + COT_K_f_full) / (COT_K_Cl**2 * COT_K_K * COT_K_Na),
+         COT_K_Cl**2 * COT_K_K * COT_K_Na * (COT_K_b_empty + COT_K_f_empty))
 
 # Permeability EQUATIONS
 CACC_PERM_MAX = 6.9e-9  # The estimated MAX permeability of the CaCC Channel. ------ m / s

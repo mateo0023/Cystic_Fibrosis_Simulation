@@ -571,49 +571,37 @@ class AirwayModel:
                * (self.co.B_ACT_K / (self.co.B_ACT_K +
                                      self.co.K_K_ext_pump * (1 + self.co.B_ACT_NA / self.co.K_Na_ext_pump))) ** 2
 
-    # Eq 4.8: System
-    def fn_J_co_sys(self, step=1):
-        """
-        Will return a list with all the values of E.
-        The first array is the 10x10 matrix for the cotransporter equation.
-        It uses Numpy to solve the homogeneous linear system.
-        """
-
-        return np.linalg.solve(np.array(
-            [[-self.co.COT_K_ON * self.co.B_CONS_NA - self.co.COT_K_BE, self.co.COT_K_1, 0,
-              0, 0, 0, 0, 0, 0, self.co.COT_K_FE],
-             [self.co.COT_K_ON * self.co.B_CONS_NA, -self.co.COT_K_ON * self.co.B_CONS_CL - self.co.COT_K_1,
-              self.co.COT_K_2, 0, 0, 0, 0, 0, 0, 0],
-             [0, self.co.COT_K_ON * self.co.B_CONS_CL, -self.co.COT_K_ON * self.co.B_CONS_K - self.co.COT_K_2,
-              self.co.COT_K_03, 0, 0, 0, 0, 0, 0],
-             [0, 0, self.co.COT_K_ON * self.co.B_CONS_K, -self.co.COT_K_ON * self.co.B_CONS_CL - self.co.COT_K_03,
-              self.co.COT_K_4, 0, 0, 0, 0, 0],
-             [0, 0, 0, self.co.COT_K_ON * self.co.B_CONS_CL, -self.co.COT_K_4 - self.co.COT_K_FF,
-              self.co.COT_K_BF, 0, 0, 0, 0],
-             [0, 0, 0, 0, self.co.COT_K_FF, -self.co.COT_K_BF - self.co.COT_K_1,
-              self.co.COT_K_ON * self.to_cons(self.data["cNa"][step-1]), 0, 0, 0],
-             [0, 0, 0, 0, 0, self.co.COT_K_1,
-              -self.co.COT_K_ON * self.to_cons(self.data["cNa"][step-1]) - self.co.COT_K_2,
-              self.co.COT_K_ON * self.to_cons(self.data["cCl"][step-1]), 0, 0],
-             [0, 0, 0, 0, 0, 0, self.co.COT_K_2,
-              -self.co.COT_K_ON * self.to_cons(self.data["cCl"][step-1]) - self.co.COT_K_I3,
-              self.co.COT_K_ON * self.to_cons(self.data["cK"][step-1]), 0],
-             [0, 0, 0, 0, 0, 0, 0, self.co.COT_K_I3,
-              -self.co.COT_K_ON * self.to_cons(self.data["cK"][step-1]) - self.co.COT_K_4,
-              self.co.COT_K_ON * self.to_cons(self.data["cCl"][step-1])],
-             [self.co.COT_K_BE, 0, 0, 0, 0, 0, 0, 0,
-              self.co.COT_K_4, -self.co.COT_K_FE - self.co.COT_K_ON * self.to_cons(self.data["cCl"][step-1])]
-             ]), np.array([0] * 10))
+    # NKCC2 Z(1-15)
+    def fn_Z_nkcc(self, step=1):
+        return (self.co.COT_Z[0] * self.data['cCl'][step-1],
+                self.co.COT_Z[1] * self.co.B_ACT_NA,
+                self.co.COT_Z[2] * self.data['cCl'][step-1] * self.data['cK'][step-1],
+                self.co.COT_Z[3] * self.co.B_ACT_CL * self.co.B_ACT_K,
+                self.co.COT_Z[4] * self.data['cCl'][step-1]**2 * self.data['cK'][step-1],
+                self.co.COT_Z[5] * self.co.B_ACT_CL * self.co.B_ACT_K * self.co.B_ACT_NA,
+                self.co.COT_Z[6] * self.data['cCl'][step-1]**2 * self.data['cK'][step-1] * self.data['cNa'][step-1],
+                self.co.COT_Z[7] * self.co.B_ACT_CL**2 * self.co.B_ACT_K * self.co.B_ACT_NA,
+                self.co.COT_Z[8] * self.data['cCl'][step-1]**2 * self.data['cK'][step-1] \
+                    * self.data['cNa'][step-1] * self.co.B_ACT_NA,
+                self.co.COT_Z[9] * self.data['cCl'][step-1] * self.co.B_ACT_CL**2 * self.co.B_ACT_K * self.co.B_ACT_NA,
+                self.co.COT_Z[10] * self.data['cCl'][step-1]**2 * self.data['cK'][step-1] \
+                    * self.data['cNa'][step-1] * self.co.B_ACT_CL * self.co.B_ACT_NA,
+                self.co.COT_Z[11] * self.data['cCl'][step-1] * self.data['cK'][step-1] \
+                    * self.co.B_ACT_CL**2 * self.co.B_ACT_K * self.co.B_ACT_NA,
+                self.co.COT_Z[12] * self.data['cCl'][step-1]**2 * self.data['cK'][step-1] \
+                    * self.co.B_ACT_CL**2 * self.co.B_ACT_K * self.co.B_ACT_NA,
+                self.co.COT_Z[13] * self.data['cCl'][step-1]**2 * self.data['cK'][step-1] \
+                    * self.data['cNa'][step-1] * self.co.B_ACT_CL * self.co.B_ACT_K * self.co.B_ACT_NA,
+                self.co.COT_Z[14] * self.data['cCl'][step-1]**2 * self.data['cK'][step-1] \
+                    * self.data['cNa'][step-1] * self.co.B_ACT_CL**2 * self.co.B_ACT_K * self.co.B_ACT_NA,
+                self.co.COT_Z[15])
 
     # Eq 4.8
     def fn_J_co(self, step=1):
-        """
-        Will return the flow of the cotransporter.
-        The function fn_J_co_sys() will be called to solve the system.
-        """
-
-        e_var = self.fn_J_co_sys(step)
-        return self.co.COT_K_FF * e_var[4] - self.co.COT_K_BF * e_var[5]
+        return (self.co.COT_K_f_full * self.co.COT_K_f_empty * self.co.B_ACT_CL**2 * self.co.B_ACT_K * self.co.B_ACT_NA
+                - self.co.COT_K_b_full * self.co.COT_K_b_empty * self.data['cCl'][step-1]**2
+                    * self.data['cNa'][step-1] * self.data['cK'][step-1]) \
+               / sum(self.fn_Z_nkcc(step))
 
     # Eq 4.9
     def fn_pJ_H2O(self, step=1):
