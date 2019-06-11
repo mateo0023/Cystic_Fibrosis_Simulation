@@ -82,7 +82,8 @@ class AirwayModel:
 
         :param init_data: is a dictionary with the initial values.
         """
-        if init_data is dict and self.isEssential(init_data):
+        if type(init_data) is dict and self.isEssential(init_data):
+            print('Essential Dict')
             self.max_steps = int(init_data['max_steps'])
             # Here we are creating the data-frame from the list of 'self.variables'
             self.data = pd.DataFrame(np.zeros((self.max_steps, len(self.variables))), columns=self.variables)
@@ -92,8 +93,9 @@ class AirwayModel:
 
             for ion in self.initial_vars[2:-1]:
                 self.data[ion][0] = np.absolute(float(init_data[ion]))
-        elif init_data is pd.DataFrame:
+        elif type(init_data) is pd.DataFrame:
             if self.isEssential(init_data):
+                print('Essential DataFrame')
                 self.loadFromDataFrame(init_data)
             else:
                 print('DataFrame is not in the correct format')
@@ -549,24 +551,24 @@ class AirwayModel:
     # Eq 4.5
     def fn_bJ_Cl(self, step=1):
         """moles per second per meter squared - moles / (sec m^2)"""
-        return - self.co.P_PERM_CL * self.co.F_RT * self.data["bV"][step-1] / (np.exp(self.co.F_RT *
-                                                                                      self.data["bV"][step-1]) - 1) \
+        return - self.co.P_PERM_CL * self.co.F_RT * self.data["bV"][step-1] \
+               / (np.exp(self.co.F_RT * self.data["bV"][step-1]) - 1) \
                * (self.data['cCl'][step-1] - self.co.B_ACT_CL * np.exp(self.co.F_RT * self.data["bV"][step-1]))
 
     # Eq 4.6
     def fn_bJ_K(self, step=1):
         """moles per second per meter squared - moles / (sec m^2)"""
-        return self.co.P_PERM_K * self.co.F_RT * self.data["bV"][step-1] / (np.exp(self.co.F_RT
-                                                                                     * self.data["bV"][step-1]) - 1) \
+        return self.co.P_PERM_K * self.co.F_RT * self.data["bV"][step-1] \
+               / (np.exp(self.co.F_RT * self.data["bV"][step-1]) - 1) \
                * (self.co.B_ACT_K - self.data["cK"][step-1] * np.exp(self.co.F_RT * self.data["bV"][step-1]))
 
     # Eq 4.7
     def fn_J_pump(self, step=1):
         """moles per second per meter squared - moles / (sec m^2)"""
-        return self.co.J_Pump_max * (self.data['cNa'][step-1] / (self.data['cNa'][step-1]
-                                                                 + self.co.K_Na_In_pump
-                                                                 * (1 + self.data['cK'][step-1]
-                                                                        / self.co.K_K_in_pump))) ** 3 \
+        return self.co.J_Pump_max * (self.data['cNa'][step-1]
+                                     / (self.data['cNa'][step-1]
+                                        + self.co.K_Na_In_pump * (1 + self.data['cK'][step-1]
+                                                                  / self.co.K_K_in_pump))) ** 3 \
                * (self.co.B_ACT_K / (self.co.B_ACT_K +
                                      self.co.K_K_ext_pump * (1 + self.co.B_ACT_NA / self.co.K_Na_ext_pump))) ** 2
 
