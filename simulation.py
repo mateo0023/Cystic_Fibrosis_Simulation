@@ -65,12 +65,11 @@ class AirwayModel:
     voltage = ['aV', 'bV', 'tV']
     current = ['aI', 'bI', 'pI']
     permeabilities = ['p_CaCC', 'p_CFTR', 'p_ENaC', 'p_BK', 'p_CaKC']
-    permeabilities_rate = ['p_CaCC_rate', 'p_CFTR_rate', 'p_ENaC_rate', 'p_BK_rate', 'p_CaKC_rate']
     nucleotide = ['ATP', 'ADP', 'AMP', 'ADO', 'INO']
     nucleotide_dt = ['dATP', 'dADP', 'dAMP', 'dADO', 'dINO']
 
     sections = ['H', 'dH', apical_ions, cel_ions, apical_flow, paracellular_flow, basolateral_flow,
-                voltage, current, permeabilities, permeabilities_rate, nucleotide, nucleotide_dt]
+                voltage, current, permeabilities, nucleotide, nucleotide_dt]
 
     # Required initial values
     initial_vars = ['max_steps', 'time_frame', 'H', 'aNa', 'aCl', 'aK', 'cNa', 'cCl', 'cK',
