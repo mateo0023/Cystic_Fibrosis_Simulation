@@ -228,12 +228,13 @@ class AirwayModel:
         return True
 
     # Graph the data.
-    def graph(self, sec=None, sec_nm=None):
+    def graph(self, sec=None, sec_nm=None, shw=True):
         """
         This function will graph all of the sections in the DataFrame. If sec_nm is set and the AirwayModel was
         initialized with the filename, it will save the graphs as .PNG and not display them.
         :param sec: A LIST with all of the sections to graph.
         :param sec_nm: The name to add as a file for the graph exports.
+        :param shw: Whether or not to show the plots on screen.
         """
         if sec is None:
             sec = self.sections
@@ -241,7 +242,7 @@ class AirwayModel:
             self.data.plot(x='Time (min)', y=sec[s])
             if self.fileName is set and sec_nm is not None:
                 plt.savefig(self.fileName[0:-4] + sec_nm[s] + '.png')
-        if self.fileName is set and sec_nm is not None:
+        if shw:
             plt.show()
 
     # To make the pd.DataFrame more accessible.
