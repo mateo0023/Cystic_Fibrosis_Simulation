@@ -167,6 +167,9 @@ class AirwayModel:
         self.data object which is a pd.DataFrame"""
         return str(self.data)
 
+    def __len__(self):
+        return len(self.data)
+
     @staticmethod
     def isEssential(data=None):
         """
@@ -882,22 +885,37 @@ def runAll(init_d=None, save_extra=True, sub_dir=SUB_DIR):
     print('Starting run.\n\tTime:', time)
     # Create d_extr to save all the averages and runtime
     d_extr = {}
-    gen_data = AirwayModel(init_d)
+    if type(init_d) is AirwayModel:
+        gen_data = init_d
+    else:
+        gen_data = AirwayModel(init_d)
 
     init_time = datetime.datetime.now()
 
     # Run all, but if an error is encountered, exit the run. It'll be easier to see the error in that case.
     # And save time if the error was caused only in one of the values due to initial conditions.
-    for step in range(1, init_d['max_steps']):
-        # noinspection PyBroadException
-        try:
-            gen_data.fn_run(step)
-        except:
-            print('Unexpected error at step', i, '\n\t', sys.exc_info()[0:2])
-            d_extr['err'] = [sys.exc_info()[0], step, None]
-            # Drop the unfilled rows, they consume space and just complicate things.
-            gen_data.drop(labels=range(i+1, gen_data.max_steps))
-            break
+    if type(init_d) is AirwayModel:
+        for step in range(1, len(gen_data)):
+            # noinspection PyBroadException
+            try:
+                gen_data.fn_run(step)
+            except:
+                print('Unexpected error at step', i, '\n\t', sys.exc_info()[0:2])
+                d_extr['err'] = [sys.exc_info()[0], step, None]
+                # Drop the unfilled rows, they consume space and just complicate things.
+                gen_data.drop(labels=range(i+1, gen_data.max_steps))
+                break
+    else:
+        for step in range(1, init_d['max_steps']):
+            # noinspection PyBroadException
+            try:
+                gen_data.fn_run(step)
+            except:
+                print('Unexpected error at step', i, '\n\t', sys.exc_info()[0:2])
+                d_extr['err'] = [sys.exc_info()[0], step, None]
+                # Drop the unfilled rows, they consume space and just complicate things.
+                gen_data.drop(labels=range(i+1, gen_data.max_steps))
+                break
 
     end_time = datetime.datetime.now()
     runtime = end_time - init_time
