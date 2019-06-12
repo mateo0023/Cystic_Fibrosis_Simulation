@@ -1,5 +1,10 @@
 from multiprocessing import Pool
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+    plt.interactive(False)
+except ImportError:
+    plt = False
+    print('Pyplot could not be imported')
 import constants_NL as co_NL
 import constants_CF as co_CF
 import pandas as pd
@@ -9,7 +14,6 @@ import zipfile
 import sys
 import os
 
-plt.interactive(False)
 # We need to stop the simulations after any error, else data will be harder to analyze.
 prev_np_err = np.seterr(all='raise')
 # Will be the folder where all of the temporary files will be saved.
@@ -223,28 +227,29 @@ class AirwayModel:
                 return False
         return True
 
-    # Graph the data.
-    def graph(self, sec=None, sec_nm=None, shw=True):
-        """
-        This function will graph all of the sections in the DataFrame. If sec_nm is set and the AirwayModel was
-        initialized with the filename, it will save the graphs as .PNG and not display them.
-        :param sec: A LIST with all of the sections to graph.
-        :param sec_nm: The name to add as a file for the graph exports.
-        :param shw: Whether or not to show the plots on screen.
-        """
-        if sec is None:
-            sec = self.sections
-        if (sec_nm is None and not shw) or sec_nm is True:
-            sec_nm = self.sections_txt
-        for s in range(len(sec)):
-            self.data.plot(x='Time (min)', y=sec[s])
-            if sec_nm is not None:
-                try:
-                    plt.savefig(self.fileName[0:-4] + '_' + sec_nm[s] + '.png')
-                except AttributeError:
-                    plt.savefig(sec_nm[s] + '.png')
-        if shw:
-            plt.show()
+    if plt:
+        # Graph the data.
+        def graph(self, sec=None, sec_nm=None, shw=True):
+            """
+            This function will graph all of the sections in the DataFrame. If sec_nm is set and the AirwayModel was
+            initialized with the filename, it will save the graphs as .PNG and not display them.
+            :param sec: A LIST with all of the sections to graph.
+            :param sec_nm: The name to add as a file for the graph exports.
+            :param shw: Whether or not to show the plots on screen.
+            """
+            if sec is None:
+                sec = self.sections
+            if (sec_nm is None and not shw) or sec_nm is True:
+                sec_nm = self.sections_txt
+            for s in range(len(sec)):
+                self.data.plot(x='Time (min)', y=sec[s])
+                if sec_nm is not None:
+                    try:
+                        plt.savefig(self.fileName[0:-4] + '_' + sec_nm[s] + '.png')
+                    except AttributeError:
+                        plt.savefig(sec_nm[s] + '.png')
+            if shw:
+                plt.show()
 
     # To make the pd.DataFrame more accessible.
     def drop(self, labels=None, axis=0):
