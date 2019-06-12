@@ -17,7 +17,7 @@ SUB_DIR = './data'
 # Will be the MAX files that can be on the SUB_DIR before they are sent to a ZIP file.
 MAX_FILES = 5
 # Max number of parallel processes.
-MAX_PROCESSES = 4
+MAX_PROCESSES = 6
 
 
 # A class with all the necessary functions to run an ASL Model.
@@ -265,8 +265,8 @@ class AirwayModel:
         self.data = pd.DataFrame(np.zeros((self.max_steps, len(self.variables))), columns=self.variables)
 
         tmp = input('Enter if simulating Cystic Fibrosis (write CF or 1) or Normal Conditions (write NL or 0).\n'
-                     'Any input error will count as Normal Conditions: ')
-        if '1' in tmp or ('C' in tmp and 'F' in tmp):
+                     '\tAny input error will count as Normal Conditions: ')
+        if '1' in tmp or ('c' in tmp.lower() and 'f' in tmp.lower()) or 'true' == tmp.lower():
             self.isCF = True
             print('\tCystic Fibrosis activated.')
         else:
@@ -275,7 +275,7 @@ class AirwayModel:
 
         self.time_frame = float(input('Enter how many seconds each step represents: '))
 
-        self.data['H'][0] = int(input('Enter the ASL height in meters: '))
+        self.data['H'][0] = float(input('Enter the ASL height in meters: '))
 
         for ion in self.initial_vars[2:8]:
             self.data[ion][0] = np.absolute(float(input('Enter the value for ' + ion + ' (in mM): ')))
