@@ -49,13 +49,6 @@ class AirwayModel:
                  'p_CaCC', 'p_CFTR', 'p_ENaC', 'p_BK', 'p_CaKC',
                  'ATP', 'dATP', 'ADP', 'dADP', 'AMP', 'dAMP', 'ADO', 'dADO', 'INO', 'dINO']
 
-    # Essential variables, necessary to run the program
-    essentials = ['Time (min)', 'H', 'dH', 'OSM_a', 'OSM_c', 'aNa', 'aCl', 'aK', 'cNa', 'cCl', 'cK',
-                  'aJ_Na', 'pJ_Na', 'aJ_K', 'pJ_K', 'aJ_Cl', 'pJ_Cl', 'J_co', 'J_pump',
-                  'bJ_Cl', 'bJ_K', 'daV', 'dbV', 'aV', 'bV', 'tV', 'aI', 'bI', 'pI',
-                  'p_CaCC', 'p_CFTR', 'p_ENaC', 'p_BK', 'p_CaKC',
-                  'ATP', 'dATP', 'ADP', 'dADP', 'AMP', 'dAMP', 'ADO', 'dADO', 'INO', 'dINO']
-
     # Separated variables into sections
     apical_ions = ['aNa', 'aCl', 'aK']
     cel_ions = ['cNa', 'cCl', 'cK']
@@ -180,13 +173,13 @@ class AirwayModel:
         Will check whether the data satisfies conditions as an initializer.
         :param data: Should be either of the accepted data formats in the __init__ method with the corresponding keys
                 or it will return False
-        :return: True:  if the pd.DataFrame contains all of the correct keys in AirwayModel.essentials
+        :return: True:  if the pd.DataFrame contains all of the correct keys in AirwayModel.variables
                         if the dictionary contains all of the keys in AirwayModel.initial_values
                 False:  otherwise.
         """
         if type(data) is pd.DataFrame:
             for v in data:
-                if v not in AirwayModel.essentials:
+                if v not in AirwayModel.variables:
                     return False
             return True
         elif type(data) is dict:
@@ -217,7 +210,7 @@ class AirwayModel:
         :return: True if all the data is complete, false otherwise.
         """
         for k in self.data:
-            if k not in self.essentials or k == 'Time (min)':
+            if k not in self.variables or k == 'Time (min)':
                 pass
             elif k == 'J_co':  # Temporal until J_co gets fixed
                 pass
