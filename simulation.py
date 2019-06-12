@@ -1,4 +1,5 @@
 from multiprocessing import Pool
+import matplotlib.pyplot as plt
 import constants_NL as co_NL
 import constants_CF as co_CF
 import pandas as pd
@@ -8,6 +9,7 @@ import zipfile
 import sys
 import os
 
+plt.interactive(False)
 # We need to stop the simulations after any error, else data will be harder to analyze.
 prev_np_err = np.seterr(all='raise')
 # Will be the folder where all of the temporary files will be saved.
@@ -209,6 +211,11 @@ class AirwayModel:
             elif self.data[k][0] == 0:
                 return False
         return True
+
+    def graph(self, sec=sections):
+        for s in sec:
+            self.data.plot(x='Time (min)', y=s)
+        plt.show()
 
     # To make the pd.DataFrame more accessible.
     def drop(self, labels=None, axis=0):
