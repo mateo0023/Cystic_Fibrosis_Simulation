@@ -238,7 +238,7 @@ class AirwayModel:
         """
         if sec is None:
             sec = self.sections
-        if sec_nm is None and not shw:
+        if (sec_nm is None and not shw) or sec_nm is True:
             sec_nm = self.sections_txt
         for s in range(len(sec)):
             self.data.plot(x='Time (min)', y=sec[s])
