@@ -71,6 +71,9 @@ class AirwayModel:
     sections = ['H', 'dH', apical_ions, cel_ions, apical_flow, paracellular_flow, basolateral_flow,
                 voltage, current, permeabilities, nucleotide, nucleotide_dt]
 
+    sections_txt = ['Height', 'dH', 'Apical-Ions', 'Cell-Ions', 'Apical-Flow', 'Paracellular-Flow',
+                    'Basolateral-Flow', 'Voltage', 'Current', 'Permeability', 'Nucleotides', 'delta-Nucleotides']
+
     # Required initial values
     initial_vars = ['max_steps', 'time_frame', 'H', 'aNa', 'aCl', 'aK', 'cNa', 'cCl', 'cK',
                     'ATP', 'ADP', 'AMP', 'ADO', 'INO', 'CF']
@@ -103,6 +106,7 @@ class AirwayModel:
         elif type(init_data) is str and '.csv' in init_data:
             try:
                 self.loadFromDataFrame(pd.read_csv(init_data))
+                self.fileName = init_data
             except FileNotFoundError or KeyError:
                 self.inputVals()
         else:
@@ -208,6 +212,10 @@ class AirwayModel:
         self.time_frame = d['Time (min)'][0] / 60
 
     def isFull(self):
+        """
+        Will check whether the DataFrame was fully loaded into the initial values.
+        :return: True if all the data is complete, false otherwise.
+        """
         for k in self.data:
             if k not in self.essentials or k == 'Time (min)':
                 pass
@@ -219,10 +227,22 @@ class AirwayModel:
                 return False
         return True
 
-    def graph(self, sec=sections):
-        for s in sec:
-            self.data.plot(x='Time (min)', y=s)
-        plt.show()
+    # Graph the data.
+    def graph(self, sec=None, sec_nm=None):
+        """
+        This function will graph all of the sections in the DataFrame. If sec_nm is set and the AirwayModel was
+        initialized with the filename, it will save the graphs as .PNG and not display them.
+        :param sec: A LIST with all of the sections to graph.
+        :param sec_nm: The name to add as a file for the graph exports.
+        """
+        if sec is None:
+            sec = self.sections
+        for s in range(len(sec)):
+            self.data.plot(x='Time (min)', y=sec[s])
+            if self.fileName is set and sec_nm is not None:
+                plt.savefig(self.fileName[::-4] + sec_nm[s] + '.png')
+        if self.fileName is set and sec_nm is not None:
+            plt.show()
 
     # To make the pd.DataFrame more accessible.
     def drop(self, labels=None, axis=0):
