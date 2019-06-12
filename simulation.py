@@ -240,7 +240,7 @@ class AirwayModel:
         for s in range(len(sec)):
             self.data.plot(x='Time (min)', y=sec[s])
             if self.fileName is set and sec_nm is not None:
-                plt.savefig(self.fileName[::-4] + sec_nm[s] + '.png')
+                plt.savefig(self.fileName[0:-4] + sec_nm[s] + '.png')
         if self.fileName is set and sec_nm is not None:
             plt.show()
 
