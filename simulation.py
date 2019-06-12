@@ -100,6 +100,11 @@ class AirwayModel:
                 self.loadFromDataFrame(init_data)
             else:
                 self.inputVals()
+        elif type(init_data) is str and '.csv' in init_data:
+            try:
+                self.loadFromDataFrame(pd.read_csv(init_data))
+            except FileNotFoundError or KeyError:
+                self.inputVals()
         else:
             self.inputVals()
 
@@ -194,7 +199,10 @@ class AirwayModel:
         :param d: The dataFrame
         :return:
         """
-        self.data = d
+        if 'Unnamed: 0' in d:
+            self.data = d.drop(labels='Unnamed: 0', axis=1)
+        else:
+            self.data = d
         self.max_steps = len(d)
         self.isCF = not bool(sum(d['p_CFTR']))
         self.time_frame = d['Time (min)'][0] / 60
