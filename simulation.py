@@ -277,9 +277,9 @@ class AirwayModel:
 
         self.data['H'][0] = float(input('Enter the ASL height in meters: '))
 
-        for ion in self.initial_vars[2:8]:
+        for ion in self.initial_vars[3:9]:
             self.data[ion][0] = np.absolute(float(input('Enter the value for ' + ion + ' (in mM): ')))
-        for nucl in self.initial_vars[8:-1]:
+        for nucl in self.initial_vars[9:-1]:
             self.data[nucl][0] = np.absolute(float(input('Enter the value for ' + nucl + ' (in micro-M): ')))
 
     # Get section, will return a dictionary with the data on the step.
