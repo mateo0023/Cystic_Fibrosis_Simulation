@@ -238,10 +238,14 @@ class AirwayModel:
         """
         if sec is None:
             sec = self.sections
+        if sec_nm is None and not shw:
+            sec_nm = self.sections_txt
         for s in range(len(sec)):
             self.data.plot(x='Time (min)', y=sec[s])
             if self.fileName is set and sec_nm is not None:
-                plt.savefig(self.fileName[0:-4] + sec_nm[s] + '.png')
+                plt.savefig(self.fileName[0:-4] + '_' + sec_nm[s] + '.png')
+            elif sec_nm is not None:
+                plt.savefig(sec_nm[s] + '.png')
         if shw:
             plt.show()
 
