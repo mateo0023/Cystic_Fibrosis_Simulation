@@ -272,10 +272,10 @@ class AirwayModel:
                      '\tAny input error will count as Normal Conditions: ')
         if '1' in tmp or ('c' in tmp.lower() and 'f' in tmp.lower()) or 'true' == tmp.lower():
             self.isCF = True
-            print('\tCystic Fibrosis activated.')
+            print('\t\tCystic Fibrosis activated.')
         else:
             self.isCF = False
-            print('\tNormal Conditions activated.')
+            print('\t\tNormal Conditions activated.')
 
         self.time_frame = float(input('Enter how many seconds each step represents: '))
 
