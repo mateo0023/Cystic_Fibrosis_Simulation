@@ -347,7 +347,7 @@ class AirwayModel:
     # Voltage Calculator, approximate!
     def fn_voltage(self, membrane='a', step=1):
         """
-        Uses the Goldman–Hodgkin–Katz (GHK) equation to estimate the voltage of 'membrane' at 'step'.
+        Uses the Ernst equation to estimate the voltage of 'membrane' at 'step'.
         Uses the main ions in the compartment 'a' or 'b' depending on the membrane and the ones inside the cell.
         Main ions are: Chloride, Sodium, and Potassium.
         :param membrane: The membrane to which to calculate it's voltage, if the transmembrane potential is asked
@@ -356,21 +356,19 @@ class AirwayModel:
                 calculate it's results.
         :return: It will return the estimated potential in Volts.
         """
-        if membrane == 'p' or membrane == 't':
-            return self.fn_voltage('b', step) - self.fn_voltage('a', step)
-        elif membrane == 'a':
-            return self.co.R * self.co.TEMP / self.co.FARADAY * np.log(
-                (self.data['p_ENaC'][step-1] * self.data['aNa'][step-1]
-                 + self.data['p_BK'][step-1] * self.data['aKa'][step-1]
-                 + (self.data['p_CaCC'][step-1] + self.data['p_CFTR'][step-1]) * self.data['cCl'][step-1])
-                /
-                (self.data['p_ENaC'][step-1] * self.data['cNa'][step-1]
-                 + self.data['p_BK'][step-1] * self.data['cKa'][step-1]
-                 + (self.data['p_CaCC'][step-1] + self.data['p_CFTR'][step-1]) * self.data['aCl'][step-1])
-            )
+        if membrane == 'a':
+            v = 0
+            for ion in ['Na', 'K']:
+                v += np.log(self.data[membrane + ion][step-1] / self.data['c' + ion][step-1]) / self.co.F_RT
+            for ion in ['Cl']:
+                v -= np.log(self.data[membrane + ion][step-1] / self.data['c' + ion][step-1]) / self.co.F_RT
+            return v
         elif membrane == 'b':
-            # There's only one channel permeable to K+, it's the same as the Nernst Equation
-            return self.co.R * self.co.TEMP / self.co.FARADAY * np.log(self.co.B_CONS_K / self.data['cKa'][step-1])
+            return np.log(self.co.B_CONS_NA / self.data['cNa'][step-1]) / self.co.F_RT \
+                   + np.log(self.co.B_CONS_K / self.data['cK'][step-1]) / self.co.F_RT \
+                   - np.log(self.co.B_CONS_CL / self.data['cCl'][step-1]) / self.co.F_RT
+        elif membrane == 'p' or membrane == 't':
+            return self.fn_voltage('b', step) - self.fn_voltage('a', step)
         else:
             raise KeyError('Must choose either apical, basolateral or transmembrane (paracellular).')
 
