@@ -13,6 +13,7 @@
       <w>extr</w>
       <w>katz</w>
       <w>luminal</w>
+      <w>matplotlib</w>
       <w>mili</w>
       <w>multicores</w>
       <w>nernst</w>
@@ -23,6 +24,7 @@
       <w>paracellular</w>
       <w>pase</w>
       <w>permeabilities</w>
+      <w>pyplot</w>
       <w>translocation</w>
       <w>transmembrane</w>
       <w>vals</w>

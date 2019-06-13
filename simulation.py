@@ -4,7 +4,7 @@ try:
     plt.interactive(False)
 except ImportError:
     plt = False
-    print('Pyplot could not be imported')
+    print('matplotlib.pyplot could not be imported')
 import constants_NL as co_NL
 import constants_CF as co_CF
 import pandas as pd
