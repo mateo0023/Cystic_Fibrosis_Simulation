@@ -227,6 +227,7 @@ class AirwayModel:
                 return False
         return True
 
+    # If matplotlib.pyplot was successfully imported... add the graph function
     if plt:
         # Graph the data.
         def graph(self, sec=None, sec_nm=None, shw=True):
