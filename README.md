@@ -17,7 +17,7 @@ These files are the ones I'm using with `Python 3.4.8` at Michigan's computers.
 # Units for the `initial-values.csv`
 
 * `H`: meters.
-* Concentrations (`aNa` -> `cCl`): mM (10^-3 Moles).
-* Nucleotides (`ATP` -> `INO`): microM ($\mu M$ or 10^-6 Moles).
+* Concentrations (`aNa` -> `cCl`): mM ($10^{-3}$ Molar).
+* Nucleotides (`ATP` -> `INO`): microM ($\mu M$ or $10^{-6}$ Molar).
 * Cystic Fibrosis (`CF`): 1 (modeling cystic fibrosis) or 0 (normal conditions).
   * It now *has an effect on the simulations!*
