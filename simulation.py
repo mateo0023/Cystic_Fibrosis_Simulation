@@ -21,7 +21,7 @@ SUB_DIR = './data'
 # Will be the MAX files that can be on the SUB_DIR before they are sent to a ZIP file.
 MAX_FILES = 5
 # Max number of parallel processes.
-MAX_PROCESSES = 6
+MAX_PROCESSES = 8
 
 
 # A class with all the necessary functions to run an ASL Model.
