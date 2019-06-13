@@ -14,7 +14,7 @@ These files are the ones I'm using with `Python 3.4.8` at Michigan's computers.
 * The simulations support the runs of both Normal conditions and Cystic Fibrosis.
 * The data files are compressed into a .ZIP file in case they need to be downloaded one-by one.
 
-# Units for the 'initial-values.csv'
+# Units for the `initial-values.csv`
 
 * `H`: meters.
 * Concentrations (`aNa` -> `cCl`): mM (10^-3 Moles).
