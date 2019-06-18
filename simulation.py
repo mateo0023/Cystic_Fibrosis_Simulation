@@ -117,7 +117,7 @@ class AirwayModel:
             self.co = co_CF
         else:
             print('\tData is Normal, setting BK to 0.')
-            self.fn_p_BK = lambda self, step: 0
+            self.fn_p_BK = lambda step: 0
             self.fn_run = self.fn_run_NL
             self.co = co_NL
 
