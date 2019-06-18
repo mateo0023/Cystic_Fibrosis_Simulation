@@ -117,7 +117,7 @@ class AirwayModel:
             self.co = co_CF
         else:
             print('\tData is Normal, setting BK to 0.')
-            self.fn_p_BK = lambda step: 0
+            self.fn_p_BK = lambda step=1: 0
             self.fn_run = self.fn_run_NL
             self.co = co_NL
 
@@ -649,9 +649,9 @@ class AirwayModel:
     # Eq 4.8
     def fn_J_co(self, step=1):
         return (
-                           self.co.COT_K_f_full * self.co.COT_K_f_empty * self.co.B_ACT_CL ** 2 * self.co.B_ACT_K * self.co.B_ACT_NA
-                           - self.co.COT_K_b_full * self.co.COT_K_b_empty * self.data['cCl'][step - 1] ** 2
-                           * self.data['cNa'][step - 1] * self.data['cK'][step - 1]) \
+               self.co.COT_K_f_full * self.co.COT_K_f_empty * self.co.B_ACT_CL ** 2 * self.co.B_ACT_K * self.co.B_ACT_NA
+               - self.co.COT_K_b_full * self.co.COT_K_b_empty * self.data['cCl'][step - 1] ** 2
+               * self.data['cNa'][step - 1] * self.data['cK'][step - 1]) \
                / sum(self.fn_Z_nkcc(step))
 
     # Eq 4.9
