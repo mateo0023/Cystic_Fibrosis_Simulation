@@ -957,6 +957,7 @@ def runAll(init_d=None, save_extra=True, sub_dir=SUB_DIR):
             d_extr[variable] = [gen_data[variable][0], gen_data[variable][step_err - 1],
                                 gen_data[variable][step_err]]
         d_extr['runtime'] = [str(runtime), None, None]
+        d_extr['start-end'] = [str(init_time), str(end_time), None]
         d_extr['time_frame'] = [gen_data.time_frame, None, None]
         d_extr['max_step'] = [gen_data.max_steps, None, None]
         # Save the extra data about the error
@@ -967,7 +968,8 @@ def runAll(init_d=None, save_extra=True, sub_dir=SUB_DIR):
         for variable in (AirwayModel.variables[1::])[::-1]:
             av = np.sum(gen_data[variable]) / gen_data.max_steps
             d_extr[variable] = [gen_data[variable][0], av]
-        d_extr['runtime'] = str(runtime)
+        d_extr['runtime'] = [str(runtime), None]
+        d_extr['start-end'] = [str(init_time), str(end_time)]
         d_extr['time_frame - max_step'] = [gen_data.time_frame, gen_data.max_steps]
         # Save the extra data about the run
         pd.DataFrame(d_extr, index=['initial', 'average']).to_csv(
