@@ -2,7 +2,6 @@ from multiprocessing import Pool
 
 try:
     import matplotlib.pyplot as plt
-
     plt.interactive(False)
 except ImportError:
     plt = False
@@ -113,12 +112,14 @@ class AirwayModel:
 
         # Set the fn_run() and constants to the corresponding mode, CF or NL
         if self.isCF:
-            self.fn_run = self.fn_run_CF
+            self.fn_p_CFTR = lambda step=1: 0
+            self.fn_p_ENaC = self.fn_p_ENaC_CF
             self.co = co_CF
         else:
             print('\tData is Normal, setting BK to 0.')
-            self.fn_p_BK = lambda step=1: 0
-            self.fn_run = self.fn_run_NL
+            self.fn_p_BK = lambda step=1: 0  # For testing purposes.
+            self.fn_p_CFTR = self.fn_p_CFTR_NL
+            self.fn_p_ENaC = self.fn_p_ENaC_NL
             self.co = co_NL
 
         if not self.isFull():
@@ -378,7 +379,7 @@ class AirwayModel:
             raise KeyError('Must choose either apical, basolateral or transmembrane (paracellular).')
 
     # Run Eq in Normal Conditions
-    def fn_run_NL(self, step=1):
+    def fn_run(self, step=1):
         """
         Will run all the required Eqs and update the values.
         :param step: Is the step to which to calculate the values to. When required to obtain a value, it will
@@ -428,73 +429,6 @@ class AirwayModel:
         self.data["p_CaCC"][step] = self.fn_p_CaCC(step)
         self.data["p_CFTR"][step] = self.fn_p_CFTR(step)
         self.data["p_ENaC"][step] = self.fn_p_ENaC(step)
-        self.data["p_BK"][step] = self.fn_p_BK(step)
-        self.data["p_CaKC"][step] = self.fn_p_CaKC(step)
-
-        self.data["dATP"][step] = self.fn_dATP(step) / 60  # To get it to muM/sec instead of muM/min
-        self.data["ATP"][step] = self.data["ATP"][step - 1] + self.data["dATP"][step] * self.time_frame
-        self.data["dADP"][step] = self.fn_dADP(step) / 60  # To get it to muM/sec instead of muM/min
-        self.data["ADP"][step] = self.data["ADP"][step] + self.data["dADP"][step] * self.time_frame
-        self.data["dAMP"][step] = self.fn_dAMP(step) / 60  # To get it to muM/sec instead of muM/min
-        self.data["AMP"][step] = self.data["AMP"][step - 1] + self.data["dAMP"][step] * self.time_frame
-        self.data["dADO"][step] = self.fn_dADO(step) / 60  # To get it to muM/sec instead of muM/min
-        self.data["ADO"][step] = self.data["ADO"][step - 1] + self.data["dADO"][step] * self.time_frame
-        self.data["dINO"][step] = self.fn_dINO(step) / 60  # To get it to muM/sec instead of muM/min
-        self.data["INO"][step] = self.data["INO"][step - 1] + self.data["dINO"][step] * self.time_frame
-
-    # Run Eq in Cystic Fibrosis
-    def fn_run_CF(self, step=1):
-        """
-        Cystic Fibrosis.
-        Will run all the required Eqs and update the values.
-        :param step: Is the step to which to calculate the values to. When required to obtain a value, it will
-                collect it from step-1.
-                Defaults to 1
-        """
-
-        self.data['Time (min)'][step] = step * self.time_frame / 60
-        self.data["dH"][step] = self.fn_dH(step)
-        self.data["H"][step] = self.data["H"][step - 1] + self.data["dH"][step] * self.time_frame
-        self.data["OSM_a"][step] = self.fn_OSM_a(step)
-        self.data["OSM_c"][step] = self.fn_OSM_c(step)
-
-        self.data["aNa"][step] = self.data["aNa"][step - 1] + self.fn_daN_Na(step) * self.time_frame / \
-                                 self.data['H'][
-                                     step - 1]  # in mM
-        self.data["aCl"][step] = self.data["aCl"][step - 1] + self.fn_daN_Cl(step) * self.time_frame / \
-                                 self.data['H'][
-                                     step - 1]  # in mM
-        self.data["aK"][step] = self.data["aK"][step - 1] + self.fn_daN_K(step) * self.time_frame / self.data['H'][
-            step - 1]  # in mM
-
-        # It's now in mol / m^2
-        self.data["cNa"][step] = self.data["cNa"][step - 1] + self.fn_dcN_Na(step) * self.time_frame
-        self.data["cCl"][step] = self.data["cCl"][step - 1] + self.fn_dcN_Cl(step) * self.time_frame
-        self.data["cK"][step] = self.data["cK"][step - 1] + self.fn_dcN_K(step) * self.time_frame
-
-        self.data["aJ_Na"][step] = self.fn_aJ_Na(step)
-        self.data["aJ_Cl"][step] = self.fn_aJ_Cl(step)
-        self.data["aJ_K"][step] = self.fn_aJ_K(step)
-        self.data["pJ_Na"][step] = self.fn_pJ_Na(step)
-        self.data["pJ_Cl"][step] = self.fn_pJ_Cl(step)
-        self.data["pJ_K"][step] = self.fn_pJ_K(step)
-
-        self.data["J_co"][step] = self.fn_J_co(step)
-        self.data["J_pump"][step] = self.fn_J_pump(step)
-        self.data["bJ_Cl"][step] = self.fn_bJ_Cl(step)
-        self.data["bJ_K"][step] = self.fn_bJ_K(step)
-
-        self.data["daV"][step] = self.fn_daV(step)
-        self.data["aV"][step] = self.data["aV"][step - 1] + self.data["daV"][step] * self.time_frame
-        self.data["dbV"][step] = self.fn_dbV(step)
-        self.data["bV"][step] = self.data["bV"][step - 1] + self.data["dbV"][step] * self.time_frame
-        self.data["tV"][step] = self.data["bV"][step - 1] - self.data["aV"][step]
-        self.data["aI"][step] = self.fn_aI(step)
-        self.data["pI"][step] = self.fn_pI(step)
-        self.data["bI"][step] = self.fn_bI(step)
-
-        self.data["p_CaCC"][step] = self.fn_p_CaCC(step)
-        self.data["p_ENaC"][step] = self.fn_p_ENaC_CF(step)
         self.data["p_BK"][step] = self.fn_p_BK(step)
         self.data["p_CaKC"][step] = self.fn_p_CaKC(step)
 
@@ -692,7 +626,7 @@ class AirwayModel:
         return self.co.CACC_PERM_MAX / (1 + self.co.CACC_ATP_AT_HALF_PERM / self.data["ATP"][step - 1])
 
     # Eq 5.1.2
-    def fn_p_CFTR(self, step=1):
+    def fn_p_CFTR_NL(self, step=1):
         """
         Returns the permeability of the CFTR channel
         :return: meters per second (m / sec)
@@ -709,7 +643,7 @@ class AirwayModel:
         return self.co.BK_PERM_MAX / (1 + self.co.BK_ATP_AT_HALF_PERM / self.data["ATP"][step - 1])
 
     # Eq 5.3 for NL
-    def fn_p_ENaC(self, step=1):
+    def fn_p_ENaC_NL(self, step=1):
         """
         Is the permeability of the ENaC channel (Sodium)
         Now it's different for C.F.
