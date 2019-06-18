@@ -975,6 +975,7 @@ def runAll(init_d=None, save_extra=True, sub_dir=SUB_DIR):
 
     date_time = datetime.datetime.now()
     time = datetime.time(hour=date_time.hour, minute=date_time.minute, second=date_time.second)
+    del gen_data
     print('Done with the run.', '\n\tRuntime:', runtime, '\n\tAt time:', time)
     return file_name
 
