@@ -11,7 +11,11 @@
       <w>donoghue</w>
       <w>enac</w>
       <w>extr</w>
+      <w>figsize</w>
+      <w>fontsize</w>
       <w>katz</w>
+      <w>loglog</w>
+      <w>logx</w>
       <w>luminal</w>
       <w>matplotlib</w>
       <w>mili</w>
@@ -25,9 +29,17 @@
       <w>pase</w>
       <w>permeabilities</w>
       <w>pyplot</w>
+      <w>sharex</w>
+      <w>sharey</w>
       <w>translocation</w>
       <w>transmembrane</w>
       <w>vals</w>
+      <w>xerr</w>
+      <w>xlim</w>
+      <w>xticks</w>
+      <w>yerr</w>
+      <w>ylim</w>
+      <w>yticks</w>
     </words>
   </dictionary>
 </component>

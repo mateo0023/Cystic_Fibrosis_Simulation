@@ -235,20 +235,57 @@ class AirwayModel:
     # If matplotlib.pyplot was successfully imported... add the graph function
     if plt:
         # Graph the data.
-        def graph(self, sec=None, sec_nm=None, shw=True):
+        def graph(self, sec=None, sec_nm=None, shw=True, ei={}):
             """
             This function will graph all of the sections in the DataFrame. If sec_nm is set and the AirwayModel was
             initialized with the filename, it will save the graphs as .PNG and not display them.
             :param sec: A LIST with all of the sections to graph.
             :param sec_nm: The name to add as a file for the graph exports.
             :param shw: Whether or not to show the plots on screen.
+            :param ei: all of the other parameters are the optional ones for the pandas.DataFrame.plot() method,
+                    the objective is to facilitate the extra plotting functions.
             """
+            defaults = {'kind': 'line', 'ax': None, 'subplots': False, 'sharex': None,
+                        'sharey': False, 'layout': None, 'figsize': None, 'use_index': True,
+                        'title': None, 'grid': None, 'legend': True, 'style': None,
+                        'logx': False, 'logy': False,'loglog': False, 'xticks': None, 'yticks': None,
+                        'xlim': None, 'ylim': None, 'rot': None, 'fontsize': None, 'colormap': None,
+                        'table': False, 'yerr': None, 'xerr': None, 'secondary_y': False, 'sort_columns': False}
+
+            names = ['kind', 'ax', 'subplots', 'sharex',
+                     'sharey', 'layout', 'figsize', 'use_index',
+                     'title', 'grid', 'legend', 'style',
+                     'logx', 'logy', 'loglog', 'xticks', 'yticks',
+                     'xlim', 'ylim', 'rot', 'fontsize', 'colormap',
+                     'table', 'yerr', 'xerr', 'secondary_y', 'sort_columns']
+            
             if sec is None:
                 sec = self.sections
             if (sec_nm is None and not shw) or sec_nm is True:
                 sec_nm = self.sections_txt
+            
+            for name in names:
+                # If not specified, assign its default
+                if name not in ei:
+                    ei[name] = [defaults[name]] * len(sec)
+                else:
+                    try:
+                        if len(ei[name]) < len(sec):
+                            for e in range(len(sec)-len(ei[name])):
+                                ei[name].append(defaults[name])
+                    except TypeError:
+                        ei[name] = ei[name] * len(sec)
+                    
             for s in range(len(sec)):
-                self.data.plot(x='Time (min)', y=sec[s])
+                self.data.plot(x='Time (min)', y=sec[s], kind=ei['kind'][s], ax=ei['ax'][s],
+                               subplots=ei['subplots'][s], sharex=ei['sharex'][s], sharey=ei['sharey'][s],
+                               layout=ei['layout'][s], figsize=ei['figsize'][s], use_index=ei['use_index'][s],
+                               title=ei['title'][s], grid=ei['grid'][s], legend=ei['legend'][s], style=ei['style'][s],
+                               logx=ei['logx'][s], logy=ei['logy'][s], loglog=ei['loglog'][s], xticks=ei['xticks'][s],
+                               yticks=ei['yticks'][s], xlim=ei['xlim'][s], ylim=ei['ylim'][s], rot=ei['rot'][s],
+                               fontsize=ei['fontsize'][s], colormap=ei['colormap'][s], table=ei['table'][s],
+                               yerr=ei['yerr'][s], xerr=ei['xerr'][s], secondary_y=ei['secondary_y'][s],
+                               sort_columns=ei['sort_columns'][s])
                 if sec_nm is not None:
                     try:
                         plt.savefig(self.fileName[0:-4] + '_' + sec_nm[s] + '.png')
