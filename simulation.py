@@ -293,18 +293,18 @@ class AirwayModel:
                                sort_columns=ei['sort_columns'][s])
                 if sec_nm is not None:
                     try:
-                        plt.savefig('./' + self.fileName[0:-4] + '/' + self.fileName[0:-4] + '_' + sec_nm[s] + '.png')
+                        plt.savefig(self.fileName[0:-4] + '/' + self.fileName[-33:-4] + '_' + sec_nm[s] + '.png')
                     except FileNotFoundError:
-                        os.mkdir('./' + self.fileName[0:-4])
-                        plt.savefig('./' + self.fileName[0:-4] + '/' + self.fileName[0:-4] + '_' + sec_nm[s] + '.png')
+                        os.mkdir(self.fileName[0:-4])
+                        plt.savefig(self.fileName[0:-4] + '/' + self.fileName[-33:-4] + '_' + sec_nm[s] + '.png')
                     except AttributeError:
                         plt.savefig(sec_nm[s] + '.png')
                 elif zip_fls or save_fls:
                     try:
-                        plt.savefig('./' + self.fileName[0:-4] + '/' + self.fileName[0:-4] + '_' + str(s) + '.png')
+                        plt.savefig(self.fileName[0:-4] + '/' + self.fileName[-33:-4] + '_' + str(s) + '.png')
                     except FileNotFoundError:
-                        os.mkdir('./' + self.fileName[0:-4])
-                        plt.savefig('./' + self.fileName[0:-4] + '/' + self.fileName[0:-4] + '_' + str(s) + '.png')
+                        os.mkdir(self.fileName[0:-4])
+                        plt.savefig(self.fileName[0:-4] + '/' + self.fileName[-33:-4] + '_' + str(s) + '.png')
                     except AttributeError:
                         plt.savefig(str(s) + '.png')
             if shw:
