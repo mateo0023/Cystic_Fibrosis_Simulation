@@ -311,7 +311,7 @@ class AirwayModel:
                 plt.show()
             if zip_fls or not shw:
                 try:
-                    zipFiles(flsInDir('./' + self.fileName[0:-4]), delete_after=not save_fls)
+                    zipFiles(flsInDir(self.fileName[0:-4]), zip_name=self.fileName[0:-4], delete_after=not save_fls)
                 except AttributeError:
                     zipFiles([s + '.png' for s in sec_nm], delete_after=not save_fls)
 
