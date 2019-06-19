@@ -5,7 +5,7 @@ try:
     plt.interactive(False)
 except ImportError:
     plt = False
-    print('matplotlib.pyplot could not be imported')
+    print('matplotlib.pyplot could not be imported.')
 import constants_NL as co_NL
 import constants_CF as co_CF
 import pandas as pd
@@ -116,7 +116,7 @@ class AirwayModel:
             self.fn_p_ENaC = self.fn_p_ENaC_CF
             self.co = co_CF
         else:
-            print('\tData is Normal, setting BK to 0.')
+            print('\t- Data is Normal, setting BK to 0.')
             self.fn_p_BK = lambda step=1: 0  # For testing purposes.
             self.fn_p_CFTR = self.fn_p_CFTR_NL
             self.fn_p_ENaC = self.fn_p_ENaC_NL
@@ -1059,8 +1059,9 @@ if __name__ == '__main__':
                 else:
                     initial_values[-1][var] = float(initial_pd[var][i])
 
-        print('Loaded the initial values')
-        print('There will be', len(initial_values), 'simulations run. Will run parallel in sets of', MAX_PROCESSES)
+        print('Loaded the initial values.')
+        print('There will be ', len(initial_values), ' simulations run. Will run parallel in sets of ',
+              MAX_PROCESSES, '.', sep='')
 
         init = datetime.datetime.now()
 
@@ -1077,8 +1078,8 @@ if __name__ == '__main__':
             av_steps += r['max_steps']
         av_steps /= len(initial_values)
 
-        print('Did', len(initial_values), 'simulations, with an average of', av_steps,
-              'steps in', end_t - init)
+        print('Did ', len(initial_values), ' simulations, with an average of ', av_steps,
+              ' steps in ', end_t - init, '.', sep='')
     except FileNotFoundError:
         runAll()
 
