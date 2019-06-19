@@ -235,20 +235,23 @@ class AirwayModel:
     # If matplotlib.pyplot was successfully imported... add the graph function
     if plt:
         # Graph the data.
-        def graph(self, sec=None, sec_nm=None, shw=True, ei={}):
+        def graph(self, sec=None, sec_nm=None, zip_fls=True, save_fls=False, shw=True, ei={}):
             """
             This function will graph all of the sections in the DataFrame. If sec_nm is set and the AirwayModel was
             initialized with the filename, it will save the graphs as .PNG and not display them.
             :param sec: A LIST with all of the sections to graph.
-            :param sec_nm: The name to add as a file for the graph exports.
+            :param sec_nm: The name to add as a file for the graph exports and the Title of the graphs.
+            :param zip_fls: Whether to zip the files. If True and 'save_fls' is False, it will delete after.
+            :param save_fls: Whether to save the graphs as .png
             :param shw: Whether or not to show the plots on screen.
             :param ei: all of the other parameters are the optional ones for the pandas.DataFrame.plot() method,
                     the objective is to facilitate the extra plotting functions.
+                    The 'title' argument will be overwritten by sec_nm.
             """
             defaults = {'kind': 'line', 'ax': None, 'subplots': False, 'sharex': None,
                         'sharey': False, 'layout': None, 'figsize': None, 'use_index': True,
                         'title': None, 'grid': None, 'legend': True, 'style': None,
-                        'logx': False, 'logy': False,'loglog': False, 'xticks': None, 'yticks': None,
+                        'logx': False, 'logy': False, 'loglog': False, 'xticks': None, 'yticks': None,
                         'xlim': None, 'ylim': None, 'rot': None, 'fontsize': None, 'colormap': None,
                         'table': False, 'yerr': None, 'xerr': None, 'secondary_y': False, 'sort_columns': False}
 
@@ -261,12 +264,14 @@ class AirwayModel:
             
             if sec is None:
                 sec = self.sections
-            if (sec_nm is None and not shw) or sec_nm is True:
+            if sec_nm is None and (zip_fls or save_fls or not shw):
                 sec_nm = self.sections_txt
             
             for name in names:
                 # If not specified, assign its default
-                if name not in ei:
+                if name == 'title' and sec_nm is not None:
+                    ei[name] = sec_nm
+                elif name not in ei:
                     ei[name] = [defaults[name]] * len(sec)
                 else:
                     try:
@@ -288,11 +293,27 @@ class AirwayModel:
                                sort_columns=ei['sort_columns'][s])
                 if sec_nm is not None:
                     try:
-                        plt.savefig(self.fileName[0:-4] + '_' + sec_nm[s] + '.png')
+                        plt.savefig('./' + self.fileName[0:-4] + '/' + self.fileName[0:-4] + '_' + sec_nm[s] + '.png')
+                    except FileNotFoundError:
+                        os.mkdir('./' + self.fileName[0:-4])
+                        plt.savefig('./' + self.fileName[0:-4] + '/' + self.fileName[0:-4] + '_' + sec_nm[s] + '.png')
                     except AttributeError:
                         plt.savefig(sec_nm[s] + '.png')
+                elif zip_fls or save_fls:
+                    try:
+                        plt.savefig('./' + self.fileName[0:-4] + '/' + self.fileName[0:-4] + '_' + str(s) + '.png')
+                    except FileNotFoundError:
+                        os.mkdir('./' + self.fileName[0:-4])
+                        plt.savefig('./' + self.fileName[0:-4] + '/' + self.fileName[0:-4] + '_' + str(s) + '.png')
+                    except AttributeError:
+                        plt.savefig(str(s) + '.png')
             if shw:
                 plt.show()
+            if zip_fls or not shw:
+                try:
+                    zipFiles(flsInDir('./' + self.fileName[0:-4]), delete_after=not save_fls)
+                except AttributeError:
+                    zipFiles([s + '.png' for s in sec_nm], delete_after=not save_fls)
 
     # To make the pd.DataFrame more accessible.
     def drop(self, labels=None, axis=0):
@@ -927,8 +948,7 @@ def runAll(init_d=None, save_extra=True, sub_dir=SUB_DIR):
         for variable in (AirwayModel.variables[1::])[::-1]:
             d_extr[variable] = [gen_data[variable][0], gen_data[variable][step_err - 1],
                                 gen_data[variable][step_err]]
-        d_extr['runtime'] = [str(runtime), None, None]
-        d_extr['start-end'] = [str(init_time), str(end_time), None]
+        d_extr['runtime'] = [str(end_time - init_time), str(init_time), str(end_time)]
         d_extr['time_frame'] = [gen_data.time_frame, None, None]
         d_extr['max_step'] = [gen_data.max_steps, None, None]
         # Save the extra data about the error
@@ -939,7 +959,7 @@ def runAll(init_d=None, save_extra=True, sub_dir=SUB_DIR):
         for variable in (AirwayModel.variables[1::])[::-1]:
             av = np.sum(gen_data[variable]) / gen_data.max_steps
             d_extr[variable] = [gen_data[variable][0], av]
-        d_extr['runtime'] = [str(runtime), None]
+        d_extr['runtime'] = [str(end_time - init_time), None]
         d_extr['start-end'] = [str(init_time), str(end_time)]
         d_extr['time_frame - max_step'] = [gen_data.time_frame, gen_data.max_steps]
         # Save the extra data about the run
@@ -950,7 +970,8 @@ def runAll(init_d=None, save_extra=True, sub_dir=SUB_DIR):
     time = datetime.time(hour=date_time.hour, minute=date_time.minute, second=date_time.second)
     del gen_data
     print('Done with the run.', '\n\tRuntime:', runtime, '\n\tAt time:', time)
-    return file_name
+    # noinspection PyUnboundLocalVariable
+    return step
 
 
 # Will return all the files inside a directory.
@@ -1066,19 +1087,14 @@ if __name__ == '__main__':
         init = datetime.datetime.now()
 
         with Pool(MAX_PROCESSES) as p:
-            p.map(runAll, initial_values)
+            tot_steps = sum(p.map(runAll, initial_values))
 
         end_t = datetime.datetime.now()
 
         zipFiles(flsInDir(SUB_DIR), delete_after=False)
         deleteFolder()
 
-        av_steps = 0
-        for r in initial_values:
-            av_steps += r['max_steps']
-        av_steps /= len(initial_values)
-
-        print('Did ', len(initial_values), ' simulations, with an average of ', av_steps,
+        print('Did ', len(initial_values), ' simulations, with a total of  ', tot_steps,
               ' steps in ', end_t - init, '.', sep='')
     except FileNotFoundError:
         runAll()
