@@ -272,8 +272,10 @@ class AirwayModel:
             
             for name in names:
                 # If not specified, assign its default
-                if name == 'title' and sec_nm is not None:
+                if name == 'title' and sec_nm == self.sections_txt:
                     ei[name] = [sec_nm[n] + ' - ' + self.sections_units[n] for n in range(len(sec_nm))]
+                elif name == 'title' and sec_nm is not None:
+                    ei[name] = sec_nm
                 elif name not in ei:
                     ei[name] = [defaults[name]] * len(sec)
                 else:
