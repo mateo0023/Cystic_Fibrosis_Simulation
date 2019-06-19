@@ -311,7 +311,8 @@ class AirwayModel:
                 plt.show()
             if zip_fls or not shw:
                 try:
-                    zipFiles(flsInDir(self.fileName[0:-4]), zip_name=self.fileName[0:-4], delete_after=not save_fls)
+                    zipFiles(flsInDir(self.fileName[0:-4]), zip_name=self.fileName[0:-4] + '_graph',
+                             delete_after=not save_fls)
                     if not save_fls:
                         deleteFolder(self.fileName[0:-4])
                 except AttributeError:
