@@ -1,11 +1,4 @@
 from multiprocessing import Pool
-
-try:
-    import matplotlib.pyplot as plt
-    plt.interactive(False)
-except ImportError:
-    plt = False
-    print('matplotlib.pyplot could not be imported.')
 import constants_NL as co_NL
 import constants_CF as co_CF
 import pandas as pd
@@ -15,6 +8,12 @@ import datetime
 import zipfile
 import sys
 import os
+try:
+    import matplotlib.pyplot as plt
+    plt.interactive(False)
+except ImportError:
+    plt = False
+    print('matplotlib.pyplot could not be imported.')
 
 # We need to stop the simulations after any error, else data will be harder to analyze.
 prev_np_err = np.seterr(all='raise')
