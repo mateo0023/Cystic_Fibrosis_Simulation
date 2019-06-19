@@ -72,6 +72,9 @@ class AirwayModel:
     sections_txt = ['Height', 'dH', 'Apical-Ions', 'Cell-Ions', 'Apical-Flow', 'Paracellular-Flow',
                     'Basolateral-Flow', 'Voltage', 'Current', 'Permeability', 'Nucleotides', 'delta-Nucleotides']
 
+    sections_units = ['m', 'm/s', 'mM', 'mM', 'mol/(m^2 sec)', 'mol/(m^2 sec)',
+                      'mol/(m^2 sec)', 'V', 'A / m^2', 'm/s', 'micro M (muM)', 'muM / sec']
+
     # Required initial values
     initial_vars = ['max_steps', 'time_frame', 'H', 'aNa', 'aCl', 'aK', 'cNa', 'cCl', 'cK',
                     'ATP', 'ADP', 'AMP', 'ADO', 'INO', 'CF']
@@ -270,7 +273,7 @@ class AirwayModel:
             for name in names:
                 # If not specified, assign its default
                 if name == 'title' and sec_nm is not None:
-                    ei[name] = sec_nm
+                    ei[name] = [sec_nm[n] + ' - ' + self.sections_units[n] for n in range(len(sec_nm))]
                 elif name not in ei:
                     ei[name] = [defaults[name]] * len(sec)
                 else:
