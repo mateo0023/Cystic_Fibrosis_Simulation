@@ -677,7 +677,7 @@ class AirwayModel:
     # Eq 4.8
     def fn_J_co(self, step=1):
         """Benjamin-Jonson Model of the cotransporter, as found on the thesis (MISSING REFERENCE)"""
-        return (
+        return -1 * (
                self.co.COT_K_f_full * self.co.COT_K_f_empty * self.co.B_ACT_CL ** 2 * self.co.B_ACT_K * self.co.B_ACT_NA
                - self.co.COT_K_b_full * self.co.COT_K_b_empty * self.data['cCl'][step-1] ** 2
                * self.data['cNa'][step-1] * self.data['cK'][step-1]) \
