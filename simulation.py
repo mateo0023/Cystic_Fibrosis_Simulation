@@ -19,7 +19,7 @@ except ImportError:
 prev_np_err = np.seterr(all='raise')
 # Will be the folder where all of the temporary files will be saved.
 SUB_DIR = './data'
-# Will be the MAX files that can be on the SUB_DIR before they are sent to a ZIP file.
+# Will be the MAX files that can be on the SUB_DIR before they are sent to a ZIP file. Doesn't include extra-info
 MAX_FILES = 5
 # Max number of parallel processes.
 MAX_PROCESSES = 8
@@ -648,7 +648,7 @@ class AirwayModel:
 
     # NKCC2 Z(1-15)
     def fn_Z_nkcc(self, step=1):
-        """Will return a tuple with all the 'Z's on the Benjamin-Johnson model from 97. All 16 of them"""
+        """Will return a tuple with all the 'Z's on the Benjamin-Johnson model from 1997. All 16 of them"""
         return (self.co.COT_Z[0] * self.data['cCl'][step-1],
                 self.co.COT_Z[1] * self.co.B_ACT_NA,
                 self.co.COT_Z[2] * self.data['cCl'][step-1] * self.data['cK'][step-1],
@@ -676,12 +676,15 @@ class AirwayModel:
 
     # Eq 4.8
     def fn_J_co(self, step=1):
-        """Benjamin-Jonson Model of the cotransporter, as found on the thesis (MISSING REFERENCE)"""
-        return -1 * (
+        """
+        Benjamin-Jonson Model of the cotransporter, as found on the thesis (MISSING REFERENCE)
+        :return units where originally 10^4 mol / (m sec), that's why we have the 10000 multiplying the expression.
+        """
+        return - self.co.COT_D * (
                self.co.COT_K_f_full * self.co.COT_K_f_empty * self.co.B_ACT_CL ** 2 * self.co.B_ACT_K * self.co.B_ACT_NA
                - self.co.COT_K_b_full * self.co.COT_K_b_empty * self.data['cCl'][step-1] ** 2
                * self.data['cNa'][step-1] * self.data['cK'][step-1]) \
-               / sum(self.fn_Z_nkcc(step))
+               / sum(self.fn_Z_nkcc(step)) * 10000
 
     # Eq 4.9
     def fn_pJ_H2O(self, step=1):
@@ -993,14 +996,15 @@ def runAll(init_d=None, save_extra=True, sub_dir=SUB_DIR):
             sub_dir + '/' + file_name + '__error-info.csv')
     elif save_extra:
         # To ignore 'Time (min)' we start from the index 1
-        for variable in AirwayModel.initial_vars[2:-1] + AirwayModel.voltage:
+        for variable in AirwayModel.variables[1::]:
             av = np.sum(gen_data[variable]) / gen_data.max_steps
-            d_extr[variable] = [gen_data[variable][0], av]
-        d_extr['runtime'] = [str(end_time - init_time), None]
-        d_extr['start-end'] = [str(init_time), str(end_time)]
-        d_extr['time_frame - max_step'] = [gen_data.time_frame, gen_data.max_steps]
+            d_extr[variable] = [gen_data[variable][0], gen_data[variable][round(gen_data.max_steps/2)],
+                                gen_data[variable][-1], av]
+        d_extr['runtime'] = [str(end_time - init_time), None, None, None]
+        d_extr['start-end'] = [str(init_time), str(end_time), None, None]
+        d_extr['time_frame - max_step'] = [gen_data.time_frame, gen_data.max_steps, None, None]
         # Save the extra data about the run
-        pd.DataFrame(d_extr, index=['initial', 'average']).to_csv(
+        pd.DataFrame(d_extr, index=['initial', 'middle', 'final', 'average']).to_csv(
             sub_dir + '/' + file_name + '__extra-info.csv')
 
     date_time = datetime.datetime.now()
@@ -1128,8 +1132,9 @@ if __name__ == '__main__':
 
         end_t = datetime.datetime.now()
 
-        zipFiles(flsInDir(SUB_DIR), delete_after=False)
-        deleteFolder()
+        if len(initial_values) > MAX_FILES:
+            zipFiles(flsInDir(SUB_DIR), delete_after=False)
+            deleteFolder()
 
         print('Did ', len(initial_values), ' simulations, with a total of  ', tot_steps,
               ' steps in ', end_t - init, '.', sep='')

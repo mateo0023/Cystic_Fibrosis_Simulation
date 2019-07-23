@@ -49,6 +49,7 @@ K_Na_ext_pump = 24.3  # Look Ref 44 for more info. ------ mM
 # COT_K_ON = 1e8  # ------ mol^-1 s^-1
 
 # NKCC2 Cotransporter - from Benjamin-Jonson (1997)
+COT_D = 19990e-10  # Density of the NKCC Cotransporter \pm 16267e-10 (IQR) - mol / cm^2
 COT_K_Cl = 2.42  # mM
 COT_K_Na = 22.38  # mM
 COT_K_K = 234.74  # mM
