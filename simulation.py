@@ -682,7 +682,7 @@ class AirwayModel:
                self.co.COT_K_f_full * self.co.COT_K_f_empty * self.co.B_ACT_CL ** 2 * self.co.B_ACT_K * self.co.B_ACT_NA
                - self.co.COT_K_b_full * self.co.COT_K_b_empty * self.data['cCl'][step-1] ** 2
                * self.data['cNa'][step-1] * self.data['cK'][step-1]) \
-               / sum(self.fn_Z_nkcc(step)) * 10000
+               / sum(self.fn_Z_nkcc(step))
 
     # Eq 4.9
     def fn_pJ_H2O(self, step=1):
@@ -997,7 +997,7 @@ def runAll(init_d=None, save_extra=True, sub_dir=SUB_DIR):
         for variable in AirwayModel.variables[1::]:
             av = np.sum(gen_data[variable]) / gen_data.max_steps
             d_extr[variable] = [gen_data[variable][0], gen_data[variable][round(gen_data.max_steps/2)],
-                                gen_data[variable][-1], av]
+                                gen_data[variable][gen_data.max_steps-1], av]
         d_extr['runtime'] = [str(end_time - init_time), None, None, None]
         d_extr['start-end'] = [str(init_time), str(end_time), None, None]
         d_extr['time_frame - max_step'] = [gen_data.time_frame, gen_data.max_steps, None, None]
