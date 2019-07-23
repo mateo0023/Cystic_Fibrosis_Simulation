@@ -138,8 +138,6 @@ class AirwayModel:
             self.fn_p_ENaC = self.fn_p_ENaC_CF
             self.co = co_CF
         else:
-            print('\t- Data is Normal, setting BK to 0.')
-            self.fn_p_BK = lambda step=1: 0  # For testing purposes.
             self.fn_p_CFTR = self.fn_p_CFTR_NL
             self.fn_p_ENaC = self.fn_p_ENaC_NL
             self.co = co_NL
