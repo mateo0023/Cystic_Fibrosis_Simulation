@@ -444,7 +444,7 @@ class AirwayModel:
     # Voltage Calculator, approximate from Nernst Eq.
     def fn_voltage(self, membrane='a', step=1):
         """
-        Uses the Ernst equation to estimate the voltage of 'membrane' at 'step'.
+        Uses the Nernst equation to estimate the voltage of 'membrane' at 'step'.
         Uses the main ions in the compartment 'a' or 'b' depending on the membrane and the ones inside the cell.
         Main ions are: Chloride, Sodium, and Potassium.
         :param membrane: The membrane to which to calculate it's voltage, if the transmembrane potential is asked

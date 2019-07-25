@@ -18,13 +18,15 @@ GAMMA = 0.76
 B_CONS_NA = 106.4  # Na+ concentration in the basolateral compartment. ------ mM (milli-moles / litter)
 B_CONS_K = 4.0  # Potassium concentration in the basolateral compartment. ------ mM (milli-moles / litter)
 B_CONS_CL = 91.2  # Chloride-ion concentration in the basolateral compartment. ------ mM (milli-moles / litter)
-A_CONS_OI = 2.7  # Other ions concentration in the apical compartment. ------ mM (milli-moles / litter)
-C_CONS_OI = 30.4  # Concentration of other ions in the cellular compartment. ------ mM (milli-moles / litter)
+A_CONS_NCL = 48.7  # Apical concentration on non-Chloride anions ------ mM
+A_CONS_IO = 2.7  # Concentration of impermeable osmolytes in the apical compartment. ------ mM (milli-moles / litter)
+C_CONS_NCL = 69.1  # Cellular concentration on non-Chloride anions ------ mM
+C_CONS_IO = 30.4  # Concentration of impermeable osmolytes in the cellular compartment. ------ mM (milli-moles / litter)
 B_ACT_NA = B_CONS_NA * GAMMA  # Activity of the ion, see above.
 B_ACT_K = B_CONS_K * GAMMA
 B_ACT_CL = B_CONS_CL * GAMMA
-A_ACT_OI = A_CONS_OI * GAMMA
-C_ACT_OI = C_CONS_OI * GAMMA
+A_ACT_OI = (A_CONS_IO + A_CONS_NCL) * GAMMA  # Activity of the non-Chloride ions and the impermeable osmolytes.
+C_ACT_OI = (C_CONS_IO + C_CONS_NCL) * GAMMA  # Activity of the non-Chloride ions and the impermeable osmolytes.
 
 # Flow
 FARADAY = 96485  # Faraday's Constant. ------ C / mol
