@@ -55,7 +55,7 @@ class AirwayModel:
     """
     # Complete with all variables that will be tracked as column names
     variables = ['Time (min)', 'H', 'dH', 'OSM_a', 'OSM_c', 'aNa', 'aCl', 'aK', 'cNa', 'cCl', 'cK',
-                 'aJ_Na', 'pJ_Na', 'aJ_K', 'pJ_K', 'aJ_Cl', 'pJ_Cl', 'J_co', 'J_pump',
+                 'aJ_Na', 'pJ_Na', 'aJ_K', 'pJ_K', 'aJ_Cl_CaCC', 'aJ_Cl_CFTR', 'pJ_Cl', 'J_co', 'J_pump',
                  'bJ_Cl', 'bJ_K', 'daV', 'dbV', 'aV', 'bV', 'tV', 'aI', 'bI', 'pI',
                  'p_CaCC', 'p_CFTR', 'p_ENaC', 'p_BK', 'p_CaKC',
                  'ATP', 'dATP', 'ADP', 'dADP', 'AMP', 'dAMP', 'ADO', 'dADO', 'INO', 'dINO']
@@ -63,7 +63,7 @@ class AirwayModel:
     # Separated variables into sections
     apical_ions = ['aNa', 'aCl', 'aK']
     cel_ions = ['cNa', 'cCl', 'cK']
-    apical_flow = ['aJ_Na', 'aJ_K', 'aJ_Cl']
+    apical_flow = ['aJ_Na', 'aJ_K', 'aJ_Cl_CaCC', 'aJ_Cl_CFTR']
     paracellular_flow = ['pJ_Na', 'pJ_K', 'pJ_Cl']
     basolateral_flow = ['J_co', 'J_pump', 'bJ_Cl', 'bJ_K']
     voltage = ['aV', 'bV', 'tV']
@@ -164,7 +164,8 @@ class AirwayModel:
             self.data["aJ_K"][0] = self.fn_aJ_K()
             self.data["pJ_K"][0] = self.fn_pJ_K()
             self.data["bJ_K"][0] = self.fn_bJ_K()
-            self.data["aJ_Cl"][0] = self.fn_aJ_Cl()
+            self.data["aJ_Cl_CaCC"][0] = self.fn_aJ_Cl_CaCC()
+            self.data["aJ_Cl_CFTR"][0] = self.fn_aJ_Cl_CFTR()
             self.data["pJ_Cl"][0] = self.fn_pJ_Cl()
             self.data["bJ_Cl"][0] = self.fn_bJ_Cl()
             self.data["J_co"][0] = self.fn_J_co()
@@ -497,7 +498,8 @@ class AirwayModel:
         self.data["cK"][step] = self.data["cK"][step-1] + self.fn_dcN_K(step) * self.time_frame
 
         self.data["aJ_Na"][step] = self.fn_aJ_Na(step)
-        self.data["aJ_Cl"][step] = self.fn_aJ_Cl(step)
+        self.data["aJ_Cl_CaCC"][step] = self.fn_aJ_Cl_CaCC(step)
+        self.data["aJ_Cl_CFTR"][step] = self.fn_aJ_Cl_CFTR(step)
         self.data["aJ_K"][step] = self.fn_aJ_K(step)
         self.data["pJ_Na"][step] = self.fn_pJ_Na(step)
         self.data["pJ_Cl"][step] = self.fn_pJ_Cl(step)
@@ -565,7 +567,7 @@ class AirwayModel:
     # Eq 3.1.3
     def fn_daN_Cl(self, step=1):
         """Difference of flow of Chloride across the apical membrane"""
-        return -self.data['aJ_Cl'][step-1] + self.data['pJ_Cl'][step-1]
+        return -(self.data['aJ_Cl_CaCC'][step-1] + self.data['aJ_Cl_CFTR'][step-1]) + self.data['pJ_Cl'][step-1]
 
     # Eq 3.2.1
     def fn_dcN_Na(self, step=1):
@@ -581,7 +583,8 @@ class AirwayModel:
     # Eq 3.2.3
     def fn_dcN_Cl(self, step=1):
         """Difference of flow of Chloride across the basolateral membrane"""
-        return self.data['aJ_Cl'][step-1] + self.data['bJ_Cl'][step-1] + 2 * self.data['J_co'][step-1]
+        return self.data['aJ_Cl_CaCC'][step-1] + self.data['aJ_Cl_CFTR'][step-1] \
+               + self.data['bJ_Cl'][step-1] + 2 * self.data['J_co'][step-1]
 
     # Eq 4.1
     def fn_aJ_Na(self, step=1):
@@ -611,6 +614,24 @@ class AirwayModel:
         :return: Flow of chloride across the apical membrane at a given step (moles / (m^2 sec)).
         """
         return -(self.data["p_CaCC"][step-1] + self.data["p_CFTR"][step-1]) \
+               * self.co.F_RT * self.data["aV"][step-1] / (np.exp(self.co.F_RT * self.data["aV"][step-1]) - 1) \
+               * (self.data["cCl"][step-1] - self.data["aCl"][step-1] * np.exp(
+            self.co.F_RT * self.data["aV"][step-1]))
+
+    def fn_aJ_Cl_CaCC(self, step=1):
+        """
+        :return: The apical flow of chloride through the CaCC channel.
+        """
+        return -self.data["p_CaCC"][step-1] \
+               * self.co.F_RT * self.data["aV"][step-1] / (np.exp(self.co.F_RT * self.data["aV"][step-1]) - 1) \
+               * (self.data["cCl"][step-1] - self.data["aCl"][step-1] * np.exp(
+            self.co.F_RT * self.data["aV"][step-1]))
+
+    def fn_aJ_Cl_CFTR(self, step=1):
+        """
+        :return: The apical flow of chloride ions through the CFTR channel.
+        """
+        return -self.data["p_CFTR"][step-1] \
                * self.co.F_RT * self.data["aV"][step-1] / (np.exp(self.co.F_RT * self.data["aV"][step-1]) - 1) \
                * (self.data["cCl"][step-1] - self.data["aCl"][step-1] * np.exp(
             self.co.F_RT * self.data["aV"][step-1]))
@@ -784,7 +805,8 @@ class AirwayModel:
     def fn_aI(self, step=1):
         """Apical current in A / m^2 or C / (sec m^2)"""
         return self.co.FARADAY * (- self.data["aJ_Na"][step-1]
-                                  + self.data["aJ_Cl"][step-1] - self.data["aJ_K"][step-1])
+                                  + self.data["aJ_Cl_CaCC"][step-1] + self.data["aJ_Cl_CFTR"][step-1]
+                                  - self.data["aJ_K"][step-1])
 
     # Eq 7.3
     def fn_bI(self, step=1):
