@@ -115,7 +115,7 @@ class AirwayModel:
             self.isCF = bool(init_data['CF'])
 
             for ion in self.initial_vars[2:-1]:
-                self.data[ion][0] = np.absolute(float(init_data[ion]))
+                self.data[ion][0] = self.to_activity(np.absolute(float(init_data[ion])))
         elif type(init_data) is pd.DataFrame:
             if 'Unnamed: 0' in init_data:
                 init_data = init_data.drop(labels='Unnamed: 0', axis=1)
@@ -221,6 +221,16 @@ class AirwayModel:
             return True
         else:
             return False
+
+    @staticmethod
+    def to_cons(activity):
+        """Return: activity / self.co.GAMMA = concentration"""
+        return activity / co_NL.GAMMA
+
+    @staticmethod
+    def to_activity(concentration):
+        """Return: activity = concentration * self.co.GAMMA"""
+        return concentration * co_NL.GAMMA
 
     def loadFromDataFrame(self, d):
         """
@@ -354,14 +364,6 @@ class AirwayModel:
     def drop(self, labels=None, axis=0):
         return self.data.drop(labels=labels, axis=axis)
 
-    def to_cons(self, activity):
-        """Return: activity / self.co.GAMMA = concentration"""
-        return activity / self.co.GAMMA
-
-    def to_activity(self, concentration):
-        """Return: activity = concentration * self.co.GAMMA"""
-        return concentration * self.co.GAMMA
-
     def inputVals(self):
         """
         This function is used to ask for all of the necessary initial values. It will go one by one
@@ -494,7 +496,6 @@ class AirwayModel:
         self.data["aK"][step] = self.data["aK"][step-1] + self.fn_daN_K(step) * self.time_frame \
                                 / self.data['H'][step-1]  # in mM
 
-        # It's now in mol / m^2
         self.data["cNa"][step] = self.data["cNa"][step-1] + self.fn_dcN_Na(step) * self.time_frame \
                                  / self.data['H_c'][step-1]
         self.data["cCl"][step] = self.data["cCl"][step-1] + self.fn_dcN_Cl(step) * self.time_frame \
@@ -652,11 +653,6 @@ class AirwayModel:
                * (self.data["cCl"][step-1] - self.data["aCl"][step-1] * np.exp(
             self.co.F_RT * self.data["aV"][step-1]))
 
-    # Eq 4.4
-    def fn_aJ_H2O(self, step=1):
-        """moles per second per meter squared - moles / (sec m^2)"""
-        return self.co.A_PERM_H20 * (self.data["OSM_c"][step-1] - self.data["OSM_a"][step-1])
-
     # Eq 4.5
     def fn_bJ_Cl(self, step=1):
         """moles per second per meter squared - moles / (sec m^2)"""
@@ -720,14 +716,6 @@ class AirwayModel:
                - self.co.COT_K_b_full * self.co.COT_K_b_empty * self.data['cCl'][step-1] ** 2
                * self.data['cNa'][step-1] * self.data['cK'][step-1]) \
                / sum(self.fn_Z_nkcc(step))
-
-    # Eq 4.9
-    def fn_pJ_H2O(self, step=1):
-        """
-        Water flow through the paracellular membrane. This equation is no needed because its effects
-        are accounted for in AirwayModel.fn_dH()
-        """
-        return self.co.B_PERM_H20 * (self.data['OSM_c'][step-1] - self.co.B_OSM)
 
     # Eq 4.10
     def fn_pJ_Na(self, step=1):
@@ -1002,7 +990,17 @@ def runAll(init_d=None, save_extra=True, sub_dir=SUB_DIR):
                 d_extr['err'] = [sys.exc_info()[0], step, None]
                 # Drop the unfilled rows, they consume space and just complicate things.
                 gen_data.drop(labels=range(i + 1, gen_data.max_steps))
+                init_d['max_steps'] = i+1
                 break
+        # Turn all the activities back into concentration.
+        for step in range(init_d['max_steps']):
+            gen_data['aNa'][step] = AirwayModel.to_cons(gen_data['aNa'][step])
+            gen_data['aCl'][step] = AirwayModel.to_cons(gen_data['aCl'][step])
+            gen_data['aK'][step] = AirwayModel.to_cons(gen_data['aK'][step])
+
+            gen_data['cNa'][step] = AirwayModel.to_cons(gen_data['cNa'][step])
+            gen_data['cCl'][step] = AirwayModel.to_cons(gen_data['cCl'][step])
+            gen_data['cK'][step] = AirwayModel.to_cons(gen_data['cK'][step])
 
     end_time = datetime.datetime.now()
     runtime = end_time - init_time
