@@ -54,7 +54,7 @@ class AirwayModel:
         :returns nothing
     """
     # Complete with all variables that will be tracked as column names
-    variables = ['Time (min)', 'H', 'dH', 'OSM_a', 'OSM_c', 'aNa', 'aCl', 'aK', 'cNa', 'cCl', 'cK',
+    variables = ['Time (min)', 'H', 'H_c', 'dH', 'OSM_a', 'OSM_c', 'aNa', 'aCl', 'aK', 'cNa', 'cCl', 'cK',
                  'aJ_Na', 'pJ_Na', 'aJ_K', 'pJ_K', 'aJ_Cl_CaCC', 'aJ_Cl_CFTR', 'pJ_Cl', 'J_co', 'J_pump',
                  'bJ_Cl', 'bJ_K', 'daV', 'dbV', 'aV', 'bV', 'tV', 'aI', 'bI', 'pI',
                  'p_CaCC', 'p_CFTR', 'p_ENaC', 'p_BK', 'p_CaKC',
@@ -72,14 +72,14 @@ class AirwayModel:
     nucleotide = ['ATP', 'ADP', 'AMP', 'ADO', 'INO']
     nucleotide_dt = ['dATP', 'dADP', 'dAMP', 'dADO', 'dINO']
 
-    sections = ['H', 'dH', apical_ions, cel_ions, apical_flow, paracellular_flow, basolateral_flow,
+    sections = ['H', 'H_c', 'dH', apical_ions, cel_ions, apical_flow, paracellular_flow, basolateral_flow,
                 voltage, current, permeabilities, nucleotide, nucleotide_dt]
 
-    sections_txt = ['Height', 'dH', 'Apical-Ions', 'Cell-Ions', 'Apical-Flow', 'Paracellular-Flow',
+    sections_txt = ['Height', 'Cell Height', 'dH', 'Apical-Ions', 'Cell-Ions', 'Apical-Flow', 'Paracellular-Flow',
                     'Basolateral-Flow', 'Voltage', 'Current', 'Permeability', 'Nucleotides', 'delta-Nucleotides']
 
     # The units correspond to the sections_txt
-    sections_units = ['m', 'm/s', 'mM', 'mM', 'mol/(m^2 sec)', 'mol/(m^2 sec)',
+    sections_units = ['m', 'm', 'm/s', 'mM', 'mM', 'mol/(m^2 sec)', 'mol/(m^2 sec)',
                       'mol/(m^2 sec)', 'V', 'A / m^2', 'm/s', 'micro M (muM)', 'muM / sec']
 
     # Required initial values
@@ -147,6 +147,7 @@ class AirwayModel:
             self.data['Time (min)'][0] = 0
             self.data["OSM_a"][0] = self.fn_OSM_a()
             self.data["OSM_c"][0] = self.fn_OSM_c()
+            self.data["H_c"][0] = self.co.CELL_H
             self.data["dH"][0] = self.fn_dH()
 
             self.data["aV"][0] = self.fn_voltage('a')
@@ -482,6 +483,7 @@ class AirwayModel:
         self.data['Time (min)'][step] = step * self.time_frame / 60
         self.data["dH"][step] = self.fn_dH(step)
         self.data["H"][step] = self.data["H"][step-1] + self.data["dH"][step] * self.time_frame
+        self.data["H_c"][step] = self.data["H_c"][step-1] + self.fn_dH_c(step) * self.time_frame
         self.data["OSM_a"][step] = self.fn_OSM_a(step)
         self.data["OSM_c"][step] = self.fn_OSM_c(step)
 
@@ -493,9 +495,12 @@ class AirwayModel:
                                 / self.data['H'][step-1]  # in mM
 
         # It's now in mol / m^2
-        self.data["cNa"][step] = self.data["cNa"][step-1] + self.fn_dcN_Na(step) * self.time_frame
-        self.data["cCl"][step] = self.data["cCl"][step-1] + self.fn_dcN_Cl(step) * self.time_frame
-        self.data["cK"][step] = self.data["cK"][step-1] + self.fn_dcN_K(step) * self.time_frame
+        self.data["cNa"][step] = self.data["cNa"][step-1] + self.fn_dcN_Na(step) * self.time_frame \
+                                 / self.data['H_c'][step-1]
+        self.data["cCl"][step] = self.data["cCl"][step-1] + self.fn_dcN_Cl(step) * self.time_frame \
+                                 / self.data['H_c'][step-1]
+        self.data["cK"][step] = self.data["cK"][step-1] + self.fn_dcN_K(step) * self.time_frame \
+                                 / self.data['H_c'][step-1]
 
         self.data["aJ_Na"][step] = self.fn_aJ_Na(step)
         self.data["aJ_Cl_CaCC"][step] = self.fn_aJ_Cl_CaCC(step)
@@ -536,11 +541,22 @@ class AirwayModel:
         self.data["dINO"][step] = self.fn_dINO(step)
         self.data["INO"][step] = self.data["INO"][step-1] + self.data["dINO"][step] * self.time_frame
 
+    def fn_aJ_H2O(self, step=1):
+        return self.co.A_PERM_H20 * (self.data["OSM_c"][step-1] - self.data["OSM_a"][step-1])
+
+    def fn_pJ_H2O(self, step=1):
+        return self.co.P_PERM_H2O * (self.data["OSM_a"][step-1] - self.co.B_OSM)
+
+    def fn_bJ_H2O(self, step=1):
+        return self.co.B_PERM_H20 * (self.data["OSM_c"][step-1] - self.co.B_OSM)
+
     # Eq 1
     def fn_dH(self, step=1):
         """Calculates the rate of change of the apical water height in meters per second (m/s)"""
-        return self.co.A_V_H2O * (self.co.P_PERM_H2O * (self.data["OSM_a"][step-1] - self.co.B_OSM) +
-                                  self.co.A_PERM_H20 * (self.data["OSM_a"][step-1] - self.data["OSM_c"][step-1]))
+        return self.co.A_V_H2O * (self.fn_pJ_H2O(step) - self.fn_aJ_H2O(step))
+
+    def fn_dH_c(self, step=1):
+        return self.co.A_V_H2O * (self.fn_aJ_H2O(step) + self.fn_bJ_H2O(step))
 
     # Eq 2.1.2
     def fn_OSM_a(self, step=1):

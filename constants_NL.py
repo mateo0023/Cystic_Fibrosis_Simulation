@@ -3,6 +3,9 @@
 A_V_H2O = 1.8e-6  # Molar volume of H2O. ------ m^3 mol^-1 (meters cube / moles)
 TEMP = 310.15  # Temperature is assumed to be constant. ------ K (degrees kelvin)
 
+CELL_VOL = 1450  # Cell volume of water, used for init cell height. ------ (mu m)^3 (micro-meters cubed)
+CELL_H = (CELL_VOL / 2) ** (1/3) * 2e6  # Cell shape assumed to be around 2NxNxN. ------ m (meters)
+
 # Permeability Constants
 P_PERM_H2O = 3.1e-5  # Permeability of water through the paracellular. ------ m/s
 A_PERM_H20 = 2.4e-4  # Permeability of H2O through the apical. ------ m/s
