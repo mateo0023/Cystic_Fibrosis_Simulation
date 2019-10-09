@@ -23,6 +23,8 @@
         <list>
           <option value="Molar" />
           <option value="Concentrations" />
+          <option value="bool.savefig" />
+          <option value="bool.show" />
         </list>
       </option>
     </inspection_tool>
