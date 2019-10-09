@@ -8,12 +8,6 @@ import datetime
 import zipfile
 import sys
 import os
-try:
-    import matplotlib.pyplot as plt
-    plt.interactive(False)
-except ImportError:
-    plt = False
-    print('matplotlib.pyplot could not be imported.')
 
 # We need to stop the simulations after any error, else data will be harder to analyze.
 prev_np_err = np.seterr(all='raise')
@@ -70,17 +64,17 @@ class AirwayModel:
     current = ['aI', 'bI', 'pI']
     permeabilities = ['p_CaCC', 'p_CFTR', 'p_ENaC', 'p_BK', 'p_CaKC']
     nucleotide = ['ATP', 'ADP', 'AMP', 'ADO', 'INO']
-    nucleotide_dt = ['dATP', 'dADP', 'dAMP', 'dADO', 'dINO']
+    # nucleotide_dt = ['dATP', 'dADP', 'dAMP', 'dADO', 'dINO']
 
     sections = ['H', 'H_c', 'dH', apical_ions, cel_ions, apical_flow, paracellular_flow, basolateral_flow,
-                voltage, current, permeabilities, nucleotide, nucleotide_dt]
+                voltage, current, permeabilities, nucleotide]
 
     sections_txt = ['Height', 'Cell Height', 'dH', 'Apical-Ions', 'Cell-Ions', 'Apical-Flow', 'Paracellular-Flow',
-                    'Basolateral-Flow', 'Voltage', 'Current', 'Permeability', 'Nucleotides', 'delta-Nucleotides']
+                    'Basolateral-Flow', 'Voltage', 'Current', 'Permeability', 'Nucleotides']
 
     # The units correspond to the sections_txt
     sections_units = ['m', 'm', 'm/s', 'mM', 'mM', 'mol/(m^2 sec)', 'mol/(m^2 sec)',
-                      'mol/(m^2 sec)', 'V', 'A / m^2', 'm/s', 'micro M (muM)', 'muM / sec']
+                      'mol/(m^2 sec)', 'V', 'A / m^2', 'm/s', 'micro M (muM)']
 
     # Required initial values
     initial_vars = ['max_steps', 'time_frame', 'H', 'aNa', 'aCl', 'aK', 'cNa', 'cCl', 'cK',
@@ -178,11 +172,11 @@ class AirwayModel:
             self.data["daV"][0] = self.fn_daV()
             self.data["dbV"][0] = self.fn_dbV()
 
-            self.data["dATP"][0] = self.fn_dATP()
-            self.data["dADP"][0] = self.fn_dADP()
-            self.data["dAMP"][0] = self.fn_dAMP()
-            self.data["dADO"][0] = self.fn_dADO()
-            self.data["dINO"][0] = self.fn_dINO()
+            # self.data["dATP"][0] = self.fn_dATP()
+            # self.data["dADP"][0] = self.fn_dADP()
+            # self.data["dAMP"][0] = self.fn_dAMP()
+            # self.data["dADO"][0] = self.fn_dADO()
+            # self.data["dINO"][0] = self.fn_dINO()
 
     def __getitem__(self, item):
         return self.data[item]
@@ -259,107 +253,7 @@ class AirwayModel:
                 return False
         return True
 
-    # If matplotlib.pyplot was successfully imported... add the functions that require the library.
-    # Graph the data.
-    def graph(self, sec=None, sec_nm=None, zip_fls=True, save_fls=False, shw=True, ei={}):
-        """
-        matplotlib.pyplot successfully imported:
-            This function will graph all of the sections in the DataFrame. If sec_nm is set and the AirwayModel was
-            initialized with the filename, it will save the graphs as .PNG and not display them.
-
-            :param sec: A LIST with all of the sections to graph.
-            :param sec_nm: The name to add as a file for the graph exports and the Title of the graphs.
-            :param zip_fls: Whether to zip the files. If True and 'save_fls' is False, it will delete after.
-            :param save_fls: Whether to save the graphs as .png
-            :param shw: Whether or not to display the plots on screen.
-            :param ei: all of the other parameters are the optional ones for the pandas.DataFrame.plot() method,
-                    the objective is to facilitate the extra plotting functions.
-                    * The 'title' argument will be overwritten by sec_nm.
-                    * If an array is not provided (only one value) it will be used as the default
-                        for all of the graphs,
-                    * If a shorter list is provided, it will be filled to the necessary length
-                        with the default value of pd.DataFrame.plot().
-        else:
-            It will warn the user (with the warnings module) that matplotlib.pyplot could not be imported and
-            thus the function will not work.
-        """
-        if plt:
-            defaults = {'kind': 'line', 'ax': None, 'subplots': False, 'sharex': None,
-                        'sharey': False, 'layout': None, 'figsize': None, 'use_index': True,
-                        'title': None, 'grid': None, 'legend': True, 'style': None,
-                        'logx': False, 'logy': False, 'loglog': False, 'xticks': None, 'yticks': None,
-                        'xlim': None, 'ylim': None, 'rot': None, 'fontsize': None, 'colormap': None,
-                        'table': False, 'yerr': None, 'xerr': None, 'secondary_y': False, 'sort_columns': False}
-
-            names = ['kind', 'ax', 'subplots', 'sharex',
-                     'sharey', 'layout', 'figsize', 'use_index',
-                     'title', 'grid', 'legend', 'style',
-                     'logx', 'logy', 'loglog', 'xticks', 'yticks',
-                     'xlim', 'ylim', 'rot', 'fontsize', 'colormap',
-                     'table', 'yerr', 'xerr', 'secondary_y', 'sort_columns']
-
-            if sec is None:
-                sec = self.sections
-            if sec_nm is None and (zip_fls or save_fls or not shw):
-                sec_nm = self.sections_txt
-
-            for name in names:
-                # If not specified, assign its default
-                if name == 'title' and sec_nm == self.sections_txt:
-                    ei[name] = [sec_nm[n] + ' - ' + self.sections_units[n] for n in range(len(sec_nm))]
-                elif name == 'title' and sec_nm is not None:
-                    ei[name] = sec_nm
-                elif name not in ei:
-                    ei[name] = [defaults[name]] * len(sec)
-                else:
-                    try:
-                        if len(ei[name]) < len(sec):
-                            for e in range(len(sec)-len(ei[name])):
-                                ei[name].append(defaults[name])
-                    except TypeError:
-                        ei[name] = ei[name] * len(sec)
-
-            for s in range(len(sec)):
-                self.data.plot(x='Time (min)', y=sec[s], kind=ei['kind'][s], ax=ei['ax'][s],
-                               subplots=ei['subplots'][s], sharex=ei['sharex'][s], sharey=ei['sharey'][s],
-                               layout=ei['layout'][s], figsize=ei['figsize'][s], use_index=ei['use_index'][s],
-                               title=ei['title'][s], grid=ei['grid'][s], legend=ei['legend'][s], style=ei['style'][s],
-                               logx=ei['logx'][s], logy=ei['logy'][s], loglog=ei['loglog'][s], xticks=ei['xticks'][s],
-                               yticks=ei['yticks'][s], xlim=ei['xlim'][s], ylim=ei['ylim'][s], rot=ei['rot'][s],
-                               fontsize=ei['fontsize'][s], colormap=ei['colormap'][s], table=ei['table'][s],
-                               yerr=ei['yerr'][s], xerr=ei['xerr'][s], secondary_y=ei['secondary_y'][s],
-                               sort_columns=ei['sort_columns'][s])
-                if sec_nm is not None:
-                    try:
-                        plt.savefig(self.fileName[0:-4] + '/' + self.fileName[-33:-4] + '_' + sec_nm[s] + '.png')
-                    except FileNotFoundError:
-                        os.mkdir(self.fileName[0:-4])
-                        plt.savefig(self.fileName[0:-4] + '/' + self.fileName[-33:-4] + '_' + sec_nm[s] + '.png')
-                    except AttributeError:
-                        plt.savefig(sec_nm[s] + '.png')
-                elif zip_fls or save_fls:
-                    try:
-                        plt.savefig(self.fileName[0:-4] + '/' + self.fileName[-33:-4] + '_' + str(s) + '.png')
-                    except FileNotFoundError:
-                        os.mkdir(self.fileName[0:-4])
-                        plt.savefig(self.fileName[0:-4] + '/' + self.fileName[-33:-4] + '_' + str(s) + '.png')
-                    except AttributeError:
-                        plt.savefig(str(s) + '.png')
-            if shw:
-                plt.show()
-            if zip_fls or not shw:
-                try:
-                    zipFiles(flsInDir(self.fileName[0:-4]), zip_name=self.fileName[0:-4] + '_graph',
-                             delete_after=not save_fls)
-                    if not save_fls:
-                        deleteFolder(self.fileName[0:-4])
-                except AttributeError:
-                    zipFiles([s + '.png' for s in sec_nm], delete_after=not save_fls)
-        else:
-            warnings.warn(
-                'Matplotlib.pyplot could not be imported. Because of it, this function only prints this message and'
-                'returns False.', Warning)
-
+    
     # To make the pd.DataFrame more accessible.
     def drop(self, labels=None, axis=0):
         return self.data.drop(labels=labels, axis=axis)
@@ -484,7 +378,7 @@ class AirwayModel:
 
         self.data['Time (min)'][step] = step * self.time_frame / 60
         self.data["dH"][step] = self.fn_dH(step)
-        self.data["H"][step] = self.data["H"][step-1] + self.data["dH"][step] * self.time_frame
+        self.data["H"][step] = self.data["H"][step-1] + self.fn_dH(step) * self.time_frame
         self.data["H_c"][step] = self.data["H_c"][step-1] + self.fn_dH_c(step) * self.time_frame
         self.data["OSM_a"][step] = self.fn_OSM_a(step)
         self.data["OSM_c"][step] = self.fn_OSM_c(step)
@@ -531,16 +425,15 @@ class AirwayModel:
         self.data["p_BK"][step] = self.fn_p_BK(step)
         self.data["p_CaKC"][step] = self.fn_p_CaKC(step)
 
-        self.data["dATP"][step] = self.fn_dATP(step)
-        self.data["ATP"][step] = self.data["ATP"][step-1] + self.data["dATP"][step] * self.time_frame
-        self.data["dADP"][step] = self.fn_dADP(step)
-        self.data["ADP"][step] = self.data["ADP"][step] + self.data["dADP"][step] * self.time_frame
-        self.data["dAMP"][step] = self.fn_dAMP(step)
-        self.data["AMP"][step] = self.data["AMP"][step-1] + self.data["dAMP"][step] * self.time_frame
-        self.data["dADO"][step] = self.fn_dADO(step)
-        self.data["ADO"][step] = self.data["ADO"][step-1] + self.data["dADO"][step] * self.time_frame
-        self.data["dINO"][step] = self.fn_dINO(step)
-        self.data["INO"][step] = self.data["INO"][step-1] + self.data["dINO"][step] * self.time_frame
+        self.data["ATP"][step] = self.data["ATP"][step-1] + self.fn_dATP(step) * self.time_frame
+        # self.data["dADP"][step] = self.fn_dADP(step)
+        self.data["ADP"][step] = self.data["ADP"][step] + self.fn_dADP(step) * self.time_frame
+        # self.data["dAMP"][step] = self.fn_dAMP(step)
+        self.data["AMP"][step] = self.data["AMP"][step-1] + self.fn_dAMP(step) * self.time_frame
+        # self.data["dADO"][step] = self.fn_dADO(step)
+        self.data["ADO"][step] = self.data["ADO"][step-1] + self.fn_dADO(step) * self.time_frame
+        # self.data["dINO"][step] = self.fn_dINO(step)
+        self.data["INO"][step] = self.data["INO"][step-1] + self.fn_dINO(step) * self.time_frame
 
     def fn_aJ_H2O(self, step=1):
         return self.co.A_PERM_H20 * (self.data["OSM_c"][step-1] - self.data["OSM_a"][step-1])
