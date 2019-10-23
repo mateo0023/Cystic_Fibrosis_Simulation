@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9e637c3e-ea92-4d75-8c9a-569aacca1ad3" name="Default Changelist" comment="Made the ions work as Ion Activity, not concentration.">
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/server.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/server.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/simulation.py" beforeDir="false" afterPath="$PROJECT_DIR$/simulation.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -18,12 +18,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/simulation.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="302">
-              <caret line="1163" column="58" selection-start-line="1163" selection-start-column="24" selection-end-line="1163" selection-end-column="58" />
-              <folding>
-                <element signature="e#0#32#0" expanded="true" />
-                <element signature="e#841#2269#1" />
-              </folding>
+            <state relative-caret-position="582">
+              <caret line="365" column="29" lean-forward="true" selection-start-line="365" selection-start-column="29" selection-end-line="365" selection-end-column="29" />
             </state>
           </provider>
         </entry>
@@ -53,7 +49,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>.CF</find>
       <find>fn_p_CaCC_CF</find>
       <find>_CF</find>
       <find>NA</find>
@@ -83,6 +78,7 @@
       <find>dADP</find>
       <find>f.data[&quot;ADO&quot;</find>
       <find>ner</find>
+      <find>os.</find>
     </findStrings>
     <replaceStrings>
       <replace>(data, step=1)</replace>
@@ -120,10 +116,11 @@
         <option value="mateo0023 &lt;mateo.aberastury@gmail.com&gt;" />
       </list>
     </option>
+    <option name="UPDATE_TYPE" value="REBASE" />
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="J_co-Thesis" />
+        <entry key="$PROJECT_DIR$" value="master" />
       </map>
     </option>
     <option name="PUSH_TAGS">
@@ -167,15 +164,12 @@
     <navigator proportions="" version="1">
       <foldersAlwaysOnTop value="true" />
     </navigator>
-    <panes>
-      <pane id="Scope" />
-      <pane id="ProjectPane" />
-    </panes>
+    <panes />
   </component>
   <component name="PropertiesComponent">
     <property name="ASKED_SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../Coding/mathquillBOX" />
+    <property name="last_opened_file_path" value="$USER_HOME$/Anaconda3/Scripts/conda.exe" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PythonContentEntriesConfigurable" />
     <property name="two.files.diff.last.used.file" value="$PROJECT_DIR$/simulation - Copy.py" />
   </component>
@@ -258,10 +252,10 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.simulation" />
-        <item itemvalue="Python.constants_CF" />
         <item itemvalue="Python.constants_NL" />
+        <item itemvalue="Python.constants_CF" />
         <item itemvalue="Python.simulation" />
-        <item itemvalue="Python.simulation" />
+        <item itemvalue="Python.constants_NL" />
       </list>
     </recent_temporary>
   </component>
@@ -774,12 +768,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/simulation.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="302">
-          <caret line="1163" column="58" selection-start-line="1163" selection-start-column="24" selection-end-line="1163" selection-end-column="58" />
-          <folding>
-            <element signature="e#0#32#0" expanded="true" />
-            <element signature="e#841#2269#1" />
-          </folding>
+        <state relative-caret-position="582">
+          <caret line="365" column="29" lean-forward="true" selection-start-line="365" selection-start-column="29" selection-end-line="365" selection-end-column="29" />
         </state>
       </provider>
     </entry>
