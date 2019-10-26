@@ -97,6 +97,10 @@ class AirwayModel:
         else:
             self.inputVals()
 
+        # Will add all of the accessibility methods
+        self.to_csv = self.data.to_csv
+        self.drop = self.data.drop
+
         # Set the fn_run(), constants, and dependent-functions to the corresponding mode, CF or NL
         if self.isCF:
             self.fn_p_CFTR = lambda step=1: 0
@@ -203,10 +207,6 @@ class AirwayModel:
             elif self.data[k][0] == 0:
                 return False
         return True
-
-    # To make the pd.DataFrame more accessible.
-    def drop(self, labels=None, axis=0):
-        return self.data.drop(labels=labels, axis=axis)
 
     def inputVals(self):
         """
