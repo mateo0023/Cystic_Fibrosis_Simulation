@@ -126,6 +126,10 @@ class AirwayModel:
         else:
             self.inputVals()
 
+        #Making the self.data (pd.DataFrame) more accessible
+        self.to_csv = self.data.to_csv
+        self.drop = self.data.drop
+
         # Set the fn_run(), constants, and dependent-functions to the corresponding mode, CF or NL
         if self.isCF:
             self.fn_p_CFTR = lambda step=1: 0
@@ -253,11 +257,6 @@ class AirwayModel:
                 return False
         return True
 
-    
-    # To make the pd.DataFrame more accessible.
-    def drop(self, labels=None, axis=0):
-        return self.data.drop(labels=labels, axis=axis)
-
     def inputVals(self):
         """
         This function is used to ask for all of the necessary initial values. It will go one by one
@@ -317,27 +316,6 @@ class AirwayModel:
             except TypeError:  # if you can't iterate over the steps
                 d[variables] = self.data[variables][steps]
         return d
-
-    # It's here to keep the old method of working going on. data.to_csv('fileName.csv')
-    def to_csv(self, name, sub_dir='./'):
-        """
-        Will save self.data into a .CSV file. Defaults to the current directory.
-        If the directory is not found, it will use os.mkdir() to create the desired directory.
-
-        :param name: Is the name of the file, if the '.csv' is not in the name, it will be added.
-                NOTE: It should not contain the path of the file, only its name.
-        :param sub_dir: Is the directory to which to save the file.
-        :return:
-        """
-        if sub_dir[-1] != '/' and sub_dir[-1] != '\\':
-            sub_dir += '/'
-        if '.csv' not in name:
-            name += '.csv'
-        try:
-            self.data.to_csv(sub_dir + name)
-        except FileNotFoundError:
-            os.mkdir(sub_dir)
-            self.data.to_csv(sub_dir + name)
 
     # Voltage Calculator, approximate from Nernst Eq.
     def fn_voltage(self, membrane='a', step=1):
