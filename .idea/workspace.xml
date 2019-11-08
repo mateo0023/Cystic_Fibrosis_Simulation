@@ -2,9 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9e637c3e-ea92-4d75-8c9a-569aacca1ad3" name="Default Changelist" comment="Made the ions work as Ion Activity, not concentration.">
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/server.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/server.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/simulation.py" beforeDir="false" afterPath="$PROJECT_DIR$/simulation.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -18,11 +16,20 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/simulation.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="302">
-              <caret line="1163" column="58" selection-start-line="1163" selection-start-column="24" selection-end-line="1163" selection-end-column="58" />
+            <state relative-caret-position="336">
+              <caret line="14" selection-start-line="14" selection-end-line="14" />
               <folding>
-                <element signature="e#0#32#0" expanded="true" />
-                <element signature="e#841#2269#1" />
+                <element signature="e#0#4#0" expanded="true" />
+                <element signature="e#526#13295#0" />
+                <element signature="e#526#613#1" />
+                <element signature="e#673#13230#0" />
+                <element signature="e#683#39795#0" />
+                <element signature="e#683#2111#1" />
+                <element signature="e#39967#45939#0" />
+                <element signature="e#39967#41425#1" />
+                <element signature="e#46023#46558#0" />
+                <element signature="e#46672#47061#0" />
+                <element signature="e#47231#49114#0" />
               </folding>
             </state>
           </provider>
@@ -123,7 +130,7 @@
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="J_co-Thesis" />
+        <entry key="$PROJECT_DIR$" value="Stripped-for-MATLAB" />
       </map>
     </option>
     <option name="PUSH_TAGS">
@@ -157,10 +164,10 @@
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="775" />
-    <option name="y" value="-20" />
-    <option name="width" value="1630" />
-    <option name="height" value="865" />
+    <option name="x" value="-15" />
+    <option name="y" value="-15" />
+    <option name="width" value="1635" />
+    <option name="height" value="1735" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
   <component name="ProjectView">
@@ -168,8 +175,18 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="server" type="b2602c69:ProjectViewProjectNode" />
+              <item name="server" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
       <pane id="Scope" />
-      <pane id="ProjectPane" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -275,13 +292,6 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1559253222141</updated>
-    </task>
-    <task id="LOCAL-00010" summary="AirwayModel.__init__(self, init_data), now drops the Column 'Unnamed: 0' if present on the pandas.DataFrame init_data">
-      <created>1560273060456</created>
-      <option name="number" value="00010" />
-      <option name="presentableId" value="LOCAL-00010" />
-      <option name="project" value="LOCAL" />
-      <updated>1560273060456</updated>
     </task>
     <task id="LOCAL-00011" summary="Modified the J_co to Benjamin-Johnson's model, the one referenced in the thesis &quot;Quantitative analysis of ion transport in human epithelial cells&quot; by Donald Liam O'Donoghue">
       <created>1560290287677</created>
@@ -619,7 +629,14 @@
       <option name="project" value="LOCAL" />
       <updated>1564432516502</updated>
     </task>
-    <option name="localTasksCounter" value="59" />
+    <task id="LOCAL-00059" summary="Made the constants into a class.">
+      <created>1573179039473</created>
+      <option name="number" value="00059" />
+      <option name="presentableId" value="LOCAL-00059" />
+      <option name="project" value="LOCAL" />
+      <updated>1573179039474</updated>
+    </task>
+    <option name="localTasksCounter" value="60" />
     <servers />
   </component>
   <component name="TodoView" selected-index="3">
@@ -633,6 +650,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-6" y="-6" width="1293" height="693" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" weight="0.12946783" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.2494043" />
@@ -713,8 +731,8 @@
     </option>
   </component>
   <component name="VcsManagerConfiguration">
+    <option name="CHECK_CODE_SMELLS_BEFORE_PROJECT_COMMIT" value="true" />
     <option name="CHECK_CODE_CLEANUP_BEFORE_PROJECT_COMMIT" value="true" />
-    <MESSAGE value="sml changes" />
     <MESSAGE value="Added try import Pyplot and what to do if failed." />
     <MESSAGE value="Reverted to the Ernst equation." />
     <MESSAGE value="Changed to Pool(8) from Pool(6)" />
@@ -739,7 +757,8 @@
     <MESSAGE value="Added the cell height to the simulation and the Cell ions now change accordingly." />
     <MESSAGE value="Fixed small issue with units in the Cell Height." />
     <MESSAGE value="Made the ions work as Ion Activity, not concentration." />
-    <option name="LAST_COMMIT_MESSAGE" value="Made the ions work as Ion Activity, not concentration." />
+    <MESSAGE value="Made the constants into a class." />
+    <option name="LAST_COMMIT_MESSAGE" value="Made the constants into a class." />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/simulation - Copy.py" />
@@ -774,11 +793,20 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/simulation.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="302">
-          <caret line="1163" column="58" selection-start-line="1163" selection-start-column="24" selection-end-line="1163" selection-end-column="58" />
+        <state relative-caret-position="336">
+          <caret line="14" selection-start-line="14" selection-end-line="14" />
           <folding>
-            <element signature="e#0#32#0" expanded="true" />
-            <element signature="e#841#2269#1" />
+            <element signature="e#0#4#0" expanded="true" />
+            <element signature="e#526#13295#0" />
+            <element signature="e#526#613#1" />
+            <element signature="e#673#13230#0" />
+            <element signature="e#683#39795#0" />
+            <element signature="e#683#2111#1" />
+            <element signature="e#39967#45939#0" />
+            <element signature="e#39967#41425#1" />
+            <element signature="e#46023#46558#0" />
+            <element signature="e#46672#47061#0" />
+            <element signature="e#47231#49114#0" />
           </folding>
         </state>
       </provider>
