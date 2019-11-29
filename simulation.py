@@ -307,8 +307,27 @@ class AirwayModel:
         :exception if there's an issue loading the values, they will be asked manually.
         """
 
-        self.co = Constants(self.isCF, special_constants)
+        # Will create the needed dictionary to init the variables
+        if isinstance(init_data, str) and '.csv' in init_data:
+            self.init_pd = pd.read_csv(init_data)
+            init_data = {}
 
+            if all(k in init_pd for k in self.initial_vars):
+                for var in self.initial_vars:
+                    if var == 'max_steps':
+                        init_data[var] = int(self.init_pd[var][0])
+                    elif var == 'CF':
+                        init_data[var] = bool(self.init_pd[var][0])
+                    else:
+                        init_data[var] = float(self.init_pd[var][0])
+            
+            for var in self.voltage:
+                if var in init_pd:
+                    init_data[var] = float(self.init_pd[var])
+
+            del(self.init_pd)
+
+        # If the right argument was passed or it was rightly processed, start the init_vars
         if type(init_data) is dict and self.isEssential(init_data):
             self.max_steps = int(init_data['max_steps'])
             # Here we are creating the data-frame from the list of 'self.variables'
@@ -317,10 +336,21 @@ class AirwayModel:
             self.time_frame = float(init_data['time_frame'])
             self.isCF = bool(init_data['CF'])
 
-            for ion in self.initial_vars[2:-1]:
+            for ion in self.ions:
                 self.data[ion][0] = self.to_activity(np.absolute(float(init_data[ion])))
+
+            if all(k in init_data for k in ('aV', 'bV')):
+                self.data['aV'][0] = float(init_data['aV'])
+                self.data['bV'][0] = float(init_data['bV'])
+
+                if 'pV' in init_data:
+                    self.data['pV'][0] = float(init_data['pV'])
+                else:
+                    self.data["tV"][0] = self.data["bV"][0] - self.data["aV"][0]
         else:
             self.inputVals()
+            
+        self.co = Constants(self.isCF, special_constants)
 
         # Will add all of the accessibility methods
         self.to_csv = self.data.to_csv
@@ -342,9 +372,10 @@ class AirwayModel:
             self.data["H_c"][0] = self.co['CELL_H']
             self.data["dH"][0] = self.fn_dH()
 
-            self.data["aV"][0] = self.fn_voltage('a')
-            self.data["bV"][0] = self.fn_voltage('b')
-            self.data["tV"][0] = self.data["bV"][0] - self.data["aV"][0]
+            if not all(k in init_data for k in ('aV', 'bV')):
+                self.data["aV"][0] = self.fn_voltage('a')
+                self.data["bV"][0] = self.fn_voltage('b')
+                self.data["tV"][0] = self.data["bV"][0] - self.data["aV"][0]
 
             self.data["p_CaCC"][0] = self.fn_p_CaCC()
             self.data["p_CFTR"][0] = self.fn_p_CFTR()
@@ -384,29 +415,6 @@ class AirwayModel:
 
     def __len__(self):
         return len(self.data)
-
-    @staticmethod
-    def isEssential(data=None):
-        """
-        Will check whether the data satisfies conditions as an initializer.
-        :param data: Should be either of the accepted data formats in the __init__ method with the corresponding keys
-                or it will return False
-        :return: True:  if the pd.DataFrame contains all of the correct keys in AirwayModel.variables
-                        if the dictionary contains all of the keys in AirwayModel.initial_values
-                False:  otherwise.
-        """
-        if type(data) is pd.DataFrame:
-            for v in data:
-                if v not in AirwayModel.variables:
-                    return False
-            return True
-        elif type(data) is dict:
-            for v in AirwayModel.initial_vars:
-                if v not in data:
-                    return False
-            return True
-        else:
-            return False
 
     def to_cons(self, activity):
         """Return: activity / self.co['GAMMA'] = concentration"""
