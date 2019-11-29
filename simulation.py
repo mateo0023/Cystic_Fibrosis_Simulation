@@ -293,9 +293,7 @@ class AirwayModel:
         :exception if there's an issue loading the values, they will be asked manually.
         """
 
-        self.co = Constants(self.isCF, special_constants)
-
-        if type(init_data) is dict and self.isEssential(init_data):
+        if isinstance(init_data, dict) and all(k in init_data for k in self.initial_vars):
             self.max_steps = int(init_data['max_steps'])
             # Here we are creating the data-frame from the list of 'self.variables'
             self.data = pd.DataFrame(np.zeros((self.max_steps, len(self.variables))), columns=self.variables)
@@ -303,10 +301,20 @@ class AirwayModel:
             self.time_frame = float(init_data['time_frame'])
             self.isCF = bool(init_data['CF'])
 
-            for ion in self.initial_vars[2:-1]:
+            for ion in self.ions:
                 self.data[ion][0] = self.to_activity(np.absolute(float(init_data[ion])))
+
+            if all(v in init_data for v in ('aV', 'bV')):
+                self.data['aV'][0] = float(init_data['aV'])
+                self.data['bV'][0] = float(init_data['bV'])
+                if 'pV' in init_data:
+                    self.data['pV'][0] = float(init_data['pV'])
+                else:
+                    self.data["tV"][0] = self.data["bV"][0] - self.data["aV"][0]
         else:
             self.inputVals()
+
+        self.co = Constants(self.isCF, special_constants)
 
         # Will add all of the accessibility methods
         self.to_csv = self.data.to_csv
@@ -328,9 +336,10 @@ class AirwayModel:
             self.data["H_c"][0] = self.co['CELL_H']
             self.data["dH"][0] = self.fn_dH()
 
-            self.data["aV"][0] = self.fn_voltage('a')
-            self.data["bV"][0] = self.fn_voltage('b')
-            self.data["tV"][0] = self.data["bV"][0] - self.data["aV"][0]
+            if all(v in init_data for v in ('aV', 'bV')):
+                self.data["aV"][0] = self.fn_voltage('a')
+                self.data["bV"][0] = self.fn_voltage('b')
+                self.data["tV"][0] = self.data["bV"][0] - self.data["aV"][0]
 
             self.data["p_CaCC"][0] = self.fn_p_CaCC()
             self.data["p_CFTR"][0] = self.fn_p_CFTR()
@@ -370,30 +379,7 @@ class AirwayModel:
 
     def __len__(self):
         return len(self.data)
-
-    @staticmethod
-    def isEssential(data=None):
-        """
-        Will check whether the data satisfies conditions as an initializer.
-        :param data: Should be either of the accepted data formats in the __init__ method with the corresponding keys
-                or it will return False
-        :return: True:  if the pd.DataFrame contains all of the correct keys in AirwayModel.variables
-                        if the dictionary contains all of the keys in AirwayModel.initial_values
-                False:  otherwise.
-        """
-        if type(data) is pd.DataFrame:
-            for v in data:
-                if v not in AirwayModel.variables:
-                    return False
-            return True
-        elif type(data) is dict:
-            for v in AirwayModel.initial_vars:
-                if v not in data:
-                    return False
-            return True
-        else:
-            return False
-
+        
     def to_cons(self, activity):
         """Return: activity / self.co['GAMMA'] = concentration"""
         return activity / self.co["GAMMA"]
