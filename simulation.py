@@ -7,20 +7,135 @@ class Constants:
     This is a class that will be used to store the values of the constants.
     """
 
-    def __init__(self, cf=False, constants=None):
-        self.CF = cf
+    def __init__(self, cf, constants=None):
+        """
+        It will create all of the necessary constants for the model to run.
+
+        General Naming: where_what_ofWhat
+            * Concentration is "CONS" because it sounds closer.
+        
+        The cf is a boolean whether to default to the Cystic Fibrosis or regular constants
+        The constants should be a dictionary with the precisse name and value of the constants to which one
+            wants to override the default value
+        """
+        self.isCF = cf
 
         self.data = {}
 
-        # General Naming: where_what_ofWhat
+        # Create lambda functions for the constants that are calculated based on others.
+        self.calcCELL_H = lambda: (self.data['CELL_VOL'] / 2) ** (1 / 3) * 2e-6
+        self.calcB_ACT_NA = lambda: self.data['B_CONS_NA'] * self.data['GAMMA']
+        self.calcB_ACT_K = lambda: self.data['B_CONS_K'] * self.data['GAMMA']
+        self.calcB_ACT_CL = lambda: self.data['B_CONS_CL'] * self.data['GAMMA']
+        self.calcA_ACT_OI = lambda: (self.data['A_CONS_IO'] + self.data['A_CONS_IO']
+                                        * self.data['GAMMA'])
+        self.calcC_ACT_OI = lambda: (self.data['C_CONS_IO'] + self.data['C_CONS_NCL']
+                                        * self.data['GAMMA'])
+        self.calcF_RT = lambda: self.data['FARADAY'] / (self.data['R'] * self.data['TEMP'])
+        self.calcCOT_Z = lambda: (self.data['COT_K_Cl'] * self.data['COT_K_K'] * self.data['COT_K_Na'] * self.data['COT_K_b_empty'],
+                            self.data['COT_K_Cl'] ** 2 * self.data['COT_K_K'], self.data['COT_K_f_empty'],
+                            self.data['COT_K_Cl'] * self.data['COT_K_Na'] * self.data['COT_K_b_empty'],
+                            self.data['COT_K_Cl'] * self.data['COT_K_K'] * self.data['COT_K_f_empty'],
+                            self.data['COT_K_Na'] * self.data['COT_K_b_empty'],
+                            self.data['COT_K_Cl'] * self.data['COT_K_b_empty'],
+                            self.data['COT_K_b_empty'] + self.data['COT_K_b_full'],
+                            self.data['COT_K_f_empty'] + self.data['COT_K_f_full'],
+                            self.data['COT_K_f_full'] / self.data['COT_K_Na'],
+                            self.data['COT_K_f_full'] / self.data['COT_K_Cl'],
+                            self.data['COT_K_b_full'] / (self.data['COT_K_Cl'] * self.data['COT_K_Na']),
+                            self.data['COT_K_f_full'] / (self.data['COT_K_Cl'] * self.data['COT_K_K']),
+                            self.data['COT_K_b_full'] / (self.data['COT_K_Cl'] ** 2 * self.data['COT_K_K']),
+                            self.data['COT_K_b_full'] / (self.data['COT_K_Cl'] * self.data['COT_K_K']
+                                                        * self.data['COT_K_Na']),
+                            (self.data['COT_K_b_full'] + self.data['COT_K_f_full']) /
+                            (self.data['COT_K_Cl'] ** 2 * self.data['COT_K_K']
+                            * self.data['COT_K_Na']),
+                            self.data['COT_K_Cl'] ** 2 * self.data['COT_K_K'] * self.data['COT_K_Na']
+                            * (self.data['COT_K_b_empty'] + self.data['COT_K_f_empty']))
+
+        # Craete a dictionary to store the names of the variables that are calculated,
+        # which constants are needed to calculate them and the lambda to calculate them.
+        self.calculated = { 'CELL_H': (('CELL_VOL'), self.calcCELL_H),
+                            'B_ACT_NA': (('B_CONS_NA', 'GAMMA'), self.calcB_ACT_NA),
+                            'B_ACT_K': (('B_CONS_K', 'GAMMA'), self.calcB_ACT_K),
+                            'B_ACT_CL': (('B_CONS_CL', 'GAMMA'), self.calcB_ACT_CL),
+                            'A_ACT_OI': (('A_CONS_IO', 'A_CONS_IO', 'GAMMA'), self.calcA_ACT_OI),
+                            'C_ACT_OI': (('C_CONS_IO', 'C_CONS_NCL', 'GAMMA'), self.calcC_ACT_OI),
+                            'F_RT': (('FARADAY', 'R', 'TEMP'), self.calcF_RT)}
+
+        # All of the constants used for the Benjamin-Johnson model.
+        # In case that COT_Z needs to be re-calculated.
+        self.cotransporter_benj = ('COT_D', 'COT_K_Cl', 'COT_K_Na', 'COT_K_K', 'COT_K_f_empty',
+                                    'COT_K_f_full', 'COT_K_b_empty', 'COT_K_b_full')
+
+        if cf:
+            # Permeability Constants
+            self.data['P_PERM_NA'] = 5e-8  # Permeability of sodium ions (Na+) through the paracellular. ------ m/s
+            self.data['P_PERM_K'] = 7.2e-10  # Permeability of potassium ions (K+) through the P. ------ m/s
+            self.data['P_PERM_CL'] = 1.2e-8  # Permeability chloride ions (Cl-) through the paracellular. ------ m/s
+
+            # Osmomolarity Constants
+            self.data['A_CONS_NCL'] = 48.7  # Apical concentration on non-Chloride anions ------ mM
+            self.data[
+                'A_CONS_IO'] = 2.7  # Concentration of impermeable osmolytes in the apical compartment. ------ mM (milli-moles / litter)
+            self.data['C_CONS_NCL'] = 69.1  # Cellular concentration on non-Chloride anions ------ mM
+            self.data[
+                'C_CONS_IO'] = 30.4  # Concentration of impermeable osmolytes in the cellular compartment. ------ mM (milli-moles / litter)
+
+            # Flow
+            self.data['J_Pump_max'] = 4.4e-6  # Max flow of the Na-K-ATPase pump. ------ milli-mol m^-2 s^-1
+
+            # Permeability EQUATIONS
+            self.data['CACC_PERM_MAX'] = 6.9e-9  # The estimated MAX permeability of the CaCC Channel. ------ m / s
+            self.data['CACC_ATP_AT_HALF_PERM'] = 3.6e-5  # [ATP] when half receptors occupied (half perm). ------ muM
+
+            self.data['BK_PERM_MAX'] = 4.4e-9  # Similar concept, with the same units.
+            self.data['BK_ATP_AT_HALF_PERM'] = 1.5e-3  # Similar concept, with the same units.
+
+            self.data['ENAC_PERM_MAX'] = 2.3e-8  # Similar concept, with the same units.
+            self.data['ENAC_ATP_AT_HALF_PERM'] = 5.1e-2  # Similar concept, with the same units.
+
+            self.data['CAKC_PERM_MAX'] = 2.3e-7  # Similar concept, with the same units.
+            self.data['CAKC_ATP_AT_HALF_PERM'] = 3.3e-3  # Similar concept, with the same units.
+        else:
+            # Permeability Constants
+            self.data['P_PERM_NA'] = 1e-8  # Permeability of sodium ions (Na+) through the paracellular. ------ m/s
+            self.data['P_PERM_K'] = 3.4e-10  # Permeability of potassium ions (K+) through the P. ------ m/s
+            self.data['P_PERM_CL'] = 3.9e-8  # Permeability chloride ions (Cl-) through the paracellular. ------ m/s
+
+            # Osmomolarity Constants
+            self.data['A_CONS_NCL'] = 40.8  # Apical concentration on non-Chloride anions ------ mM
+            self.data['A_CONS_IO'] = 8  # Concentration of impermeable osmolytes in the apical compartment. ------ mM (milli-moles / litter)
+            self.data['C_CONS_NCL'] = 77.6  # Cellular concentration on non-Chloride anions ------ mM
+            self.data['C_CONS_IO'] = 29  # Concentration of impermeable osmolytes in the cellular compartment. ------ mM (milli-moles / litter)
+
+            # Flow
+            self.data['J_Pump_max'] = 1.5e-6  # Max flow of the Na-K-ATPase pump. ------ milli-mol m^-2 s^-1
+
+            # Permeability EQUATIONS
+            self.data['CACC_PERM_MAX'] = 4.8e-9  # The estimated MAX permeability of the CaCC Channel. ------ m / s
+            self.data['CACC_ATP_AT_HALF_PERM'] = 8.1e-5  # [ATP] when half receptors occupied (half perm). ------ muM
+
+            self.data['BK_PERM_MAX'] = 7.4e-9  # Similar concept, with the same units.
+            self.data['BK_ATP_AT_HALF_PERM'] = 1.3e-3  # Similar concept, with the same units.
+
+            self.data['ENAC_PERM_MAX'] = 8.3e-9  # Similar concept, with the same units.
+            self.data['ENAC_ATP_AT_HALF_PERM'] = 7.2e-2  # Similar concept, with the same units.
+            self.data['ENAC_ADO_AT_HALF_PERM'] = 3.1e-1  # Similar concept, with the same units.
+
+            self.data['CAKC_PERM_MAX'] = 2.3e-7  # Similar concept, with the same units.
+            self.data['CAKC_ATP_AT_HALF_PERM'] = 3.3e-3  # Similar concept, with the same units.
+
+            self.data['CFTR_PERM_MAX'] = 9.4e-8  # Similar concept, with the same units.
+            self.data['CFTR_ATP_AT_HALF_PERM'] = 6.8e-5  # Similar concept, with the same units.
+            self.data['CFTR_ADO_AT_HALF_PERM'] = 1.e-1 # Similar concept, with the same units.
 
         self.data['A_V_H2O'] = 1.8e-6  # Molar volume of H2O. ------ m^3 mol^-1 (meters cube / moles)
         self.data['TEMP'] = 310.15  # Temperature is assumed to be constant. ------ K (degrees kelvin)
 
         self.data[
             'CELL_VOL'] = 1450  # Cell volume of water, used for init cell height. ------ (mu m)^3 (micro-meters cubed)
-        self.data['CELL_H'] = (self.data['CELL_VOL'] / 2) ** (
-                1 / 3) * 2e-6  # Cell shape assumed to be around 2NxNxN. ------ m (meters)
+        self.data['CELL_H'] = self.calcCELL_H()  # Cell shape assumed to be around 2NxNxN. ------ m (meters)
 
         # Permeability Constants
         self.data['P_PERM_H2O'] = 3.1e-5  # Permeability of water through the paracellular. ------ m/s
@@ -37,23 +152,16 @@ class Constants:
             'B_CONS_K'] = 4.0  # Potassium concentration in the basolateral compartment. ------ mM (milli-moles / litter)
         self.data[
             'B_CONS_CL'] = 91.2  # Chloride-ion concentration in the basolateral compartment. ------ mM (milli-moles / litter)
-        self.data['A_CONS_NCL'] = 48.7  # Apical concentration on non-Chloride anions ------ mM
-        self.data['A_CONS_IO'] = 2.7  # Concentration of impermeable osmolytes in the apical compartment. ------ mM (milli-moles / litter)
-        self.data['C_CONS_NCL'] = 69.1  # Cellular concentration on non-Chloride anions ------ mM
-        self.data['C_CONS_IO'] = 30.4  # Concentration of impermeable osmolytes in the cellular compartment. ------ mM (milli-moles / litter)
-        self.data['B_ACT_NA'] = self.data['B_CONS_NA'] * self.data['GAMMA']  # Activity of the ion, see above.
-        self.data['B_ACT_K'] = self.data['B_CONS_K'] * self.data['GAMMA']
-        self.data['B_ACT_CL'] = self.data['B_CONS_CL'] * self.data['GAMMA']
-        self.data['A_ACT_OI'] = (self.data['A_CONS_IO'] + self.data['A_CONS_NCL']
-                                    * self.data['GAMMA'])  # Activity of the non-Chloride ions and the impermeable osmolytes.
-        self.data['C_ACT_OI'] = (self.data['C_CONS_IO '] + self.data['C_CONS_NCL']
-                                    * self.data['GAMMA'])  # Activity of the non-Chloride ions and the impermeable osmolytes.
+        self.data['B_ACT_NA'] = self.calcB_ACT_NA()  # Activity of the ion, see above.
+        self.data['B_ACT_K'] = self.calcB_ACT_K()
+        self.data['B_ACT_CL'] = self.calcB_ACT_CL()
+        self.data['A_ACT_OI'] = self.calcC_ACT_OI()  # Activity of the non-Chloride ions and the impermeable osmolytes.
+        self.data['C_ACT_OI'] = self.calcC_ACT_OI()  # Activity of the non-Chloride ions and the impermeable osmolytes.
 
         # Flow
         self.data['FARADAY'] = 96485  # Faraday's Constant. ------ C / mol
         self.data['R'] = 8.31447  # Gas constant. ------ J / (K mol)
-        self.data['F_RT'] = self.data['FARADAY'] / (
-                self.data['R'] * self.data['TEMP'])  # F/(R*T), To save computations.
+        self.data['F_RT'] = self.calcF_RT()  # F/(R*T), To save computations.
         self.data['K_Na_In_pump'] = 0.99  # Look Ref 44 for more info. ------ mM
         self.data['K_K_in_pump'] = 9.1  # Look Ref 44 for more info.  -   mM
         self.data['K_K_ext_pump'] = 0.11  # Look Ref 44 for more info. ------ mM
@@ -80,26 +188,7 @@ class Constants:
         self.data['COT_K_f_full'] = 1406  # s^-1
         self.data['COT_K_b_empty'] = 13196  # s^-1
         self.data['COT_K_b_full'] = 4025  # s^-1
-        self.data['COT_Z'] = (self.data[''] * self.data['COT_K_K'] * self.data['COT_K_Na'] * self.data['COT_K_b_empty'],
-                              self.data['COT_K_Cl'] ** 2 * self.data['COT_K_K'], self.data['COT_K_f_empty'],
-                              self.data['COT_K_Cl'] * self.data['COT_K_Na'] * self.data['COT_K_b_empty'],
-                              self.data['COT_K_Cl'] * self.data['COT_K_K'] * self.data['COT_K_f_empty'],
-                              self.data['COT_K_Na'] * self.data['COT_K_b_empty'],
-                              self.data['COT_K_Cl'] * self.data['COT_K_b_empty'],
-                              self.data['COT_K_b_empty'] + self.data['COT_K_b_full'],
-                              self.data['COT_K_f_empty'] + self.data['COT_K_f_full'],
-                              self.data['COT_K_f_full'] / self.data['COT_K_Na'],
-                              self.data['COT_K_f_full'] / self.data['COT_K_Cl'],
-                              self.data['COT_K_b_full'] / (self.data['COT_K_Cl'] * self.data['COT_K_Na)']),
-                              self.data['COT_K_f_full'] / (self.data['COT_K_Cl'] * self.data['COT_K_K)']),
-                              self.data['COT_K_b_full'] / (self.data['COT_K_Cl'] ** 2 * self.data['COT_K_K)']),
-                              self.data['COT_K_b_full'] / (self.data['COT_K_Cl'] * self.data['COT_K_K']
-                                                           * self.data['COT_K_Na']),
-                              (self.data['COT_K_b_full'] + self.data['COT_K_f_full']) /
-                              (self.data['COT_K_Cl'] ** 2 * self.data['COT_K_K']
-                               * self.data['COT_K_Na']),
-                              self.data['COT_K_Cl'] ** 2 * self.data['COT_K_K'] * self.data['COT_K_Na']
-                              * (self.data['COT_K_b_empty'] + self.data['COT_K_f_empty']))
+        self.data['COT_Z'] = self.calcCOT_Z()
 
         # Voltage (Capacitance)
         self.data['A_CAPACI'] = 3.23  # Capacitance of the apical membrane. ------ muF m^-2 (micro-F / meter squared)
@@ -144,71 +233,19 @@ class Constants:
         self.data['K_IN_atp'] = 28.4  # ------ muM
         self.data['K_IN_adp'] = 20.4  # ------ muM
 
-        if cf:
-            # Permeability Constants
-            self.data['P_PERM_NA'] = 5e-8  # Permeability of sodium ions (Na+) through the paracellular. ------ m/s
-            self.data['P_PERM_K'] = 7.2e-10  # Permeability of potassium ions (K+) through the P. ------ m/s
-            self.data['P_PERM_CL'] = 1.2e-8  # Permeability chloride ions (Cl-) through the paracellular. ------ m/s
-
-            # Osmomolarity Constants
-            self.data['A_CONS_NCL'] = 48.7  # Apical concentration on non-Chloride anions ------ mM
-            self.data[
-                'A_CONS_IO'] = 2.7  # Concentration of impermeable osmolytes in the apical compartment. ------ mM (milli-moles / litter)
-            self.data['C_CONS_NCL'] = 69.1  # Cellular concentration on non-Chloride anions ------ mM
-            self.data[
-                'C_CONS_IO'] = 30.4  # Concentration of impermeable osmolytes in the cellular compartment. ------ mM (milli-moles / litter)
-
-            # Flow
-            self.data['J_Pump_max'] = 4.4e-6  # Max flow of the Na-K-ATPase pump. ------ milli-mol m^-2 s^-1
-
-            # Permeability EQUATIONS
-            self.data['CACC_PERM_MAX'] = 6.9e-9  # The estimated MAX permeability of the CaCC Channel. ------ m / s
-            self.data['CACC_ATP_AT_HALF_PERM'] = 3.6e-5  # [ATP] when half receptors occupied (half perm). ------ muM
-
-            self.data['BK_PERM_MAX'] = 4.4e-9  # Similar concept, with the same units.
-            self.data['BK_ATP_AT_HALF_PERM'] = 1.5e-3  # Similar concept, with the same units.
-
-            self.data['ENAC_PERM_MAX'] = 2.3e-8  # Similar concept, with the same units.
-            self.data['ENAC_ATP_AT_HALF_PERM'] = 5.1e-2  # Similar concept, with the same units.
-
-            self.data['CAKC_PERM_MAX'] = 2.3e-7  # Similar concept, with the same units.
-            self.data['CAKC_ATP_AT_HALF_PERM'] = 3.3e-3  # Similar concept, with the same units.
-        else:
-            # Permeability Constants
-            self.data['P_PERM_NA'] = 5e-8  # Permeability of sodium ions (Na+) through the paracellular. ------ m/s
-            self.data['P_PERM_K'] = 7.2e-10  # Permeability of potassium ions (K+) through the P. ------ m/s
-            self.data['P_PERM_CL'] = 1.2e-8  # Permeability chloride ions (Cl-) through the paracellular. ------ m/s
-
-            # Osmomolarity Constants
-            self.data['A_CONS_NCL'] = 48.7  # Apical concentration on non-Chloride anions ------ mM
-            self.data[
-                'A_CONS_IO'] = 2.7  # Concentration of impermeable osmolytes in the apical compartment. ------ mM (milli-moles / litter)
-            self.data['C_CONS_NCL'] = 69.1  # Cellular concentration on non-Chloride anions ------ mM
-            self.data[
-                'C_CONS_IO'] = 30.4  # Concentration of impermeable osmolytes in the cellular compartment. ------ mM (milli-moles / litter)
-
-            # Flow
-            self.data['J_Pump_max'] = 4.4e-6  # Max flow of the Na-K-ATPase pump. ------ milli-mol m^-2 s^-1
-
-            # Permeability EQUATIONS
-            self.data['CACC_PERM_MAX'] = 6.9e-9  # The estimated MAX permeability of the CaCC Channel. ------ m / s
-            self.data['CACC_ATP_AT_HALF_PERM'] = 3.6e-5  # [ATP] when half receptors occupied (half perm). ------ muM
-
-            self.data['BK_PERM_MAX'] = 4.4e-9  # Similar concept, with the same units.
-            self.data['BK_ATP_AT_HALF_PERM'] = 1.5e-3  # Similar concept, with the same units.
-
-            self.data['ENAC_PERM_MAX'] = 2.3e-8  # Similar concept, with the same units.
-            self.data['ENAC_ATP_AT_HALF_PERM'] = 5.1e-2  # Similar concept, with the same units.
-
-            self.data['CAKC_PERM_MAX'] = 2.3e-7  # Similar concept, with the same units.
-            self.data['CAKC_ATP_AT_HALF_PERM'] = 3.3e-3  # Similar concept, with the same units.
-
-        if constants is not None:
-            for val, key in enumerate(constants):
+        if isinstance(constants, dict):
+            for key, val in constants.items():
                 if key in self.data:
                     self.data[key] = val
                 else:
                     pass
+            
+            for cons, val in self.calculated.items():
+                if any(k in constants for k in val[0]):
+                    self.data[cons] = val[1]()
+
+            if any(k in constants for k in self.cotransporter_benj):
+                self.data['COT_Z'] = self.calcCOT_Z()
 
     def __getitem__(self, item):
         return self.data[item]
@@ -326,9 +363,16 @@ class AirwayModel:
 
             self.co = Constants(self.isCF, special_constants)
 
+            
+            self.data['H'][0] = float(init_data['H'])
+
             for ion in self.apical_ions + self.cel_ions:
                 self.data[ion][0] = self.to_activity(np.absolute(float(init_data[ion])))
 
+            for nuc in self.nucleotide:
+                self.data[nuc][0] = float(init_data[nuc])
+
+            
             if all(v in init_data for v in ('aV', 'bV')):
                 self.data['aV'][0] = float(init_data['aV'])
                 self.data['bV'][0] = float(init_data['bV'])
@@ -679,7 +723,7 @@ class AirwayModel:
         return -self.data["p_CaCC"][step - 1] \
                * self.co['F_RT'] * self.data["aV"][step - 1] / (np.exp(self.co['F_RT'] * self.data["aV"][step - 1]) - 1) \
                * (self.data["cCl"][step - 1] - self.data["aCl"][step - 1] * np.exp(
-            self.co['F_RT'] * self.data["aV"][step - 1]))
+                    self.co['F_RT'] * self.data["aV"][step - 1]))
 
     def fn_aJ_Cl_CFTR(self, step=1):
         """
@@ -695,7 +739,7 @@ class AirwayModel:
         """moles per second per meter squared - moles / (sec m^2)"""
         return - self.co['P_PERM_CL'] * self.co['F_RT'] * self.data["bV"][step - 1] \
                / (np.exp(self.co['F_RT'] * self.data["bV"][step - 1]) - 1) \
-               * (self.data['cCl'][step - 1] - self.co['B_ACT_CL '] * np.exp(
+               * (self.data['cCl'][step - 1] - self.co['B_ACT_CL'] * np.exp(
             self.co['F_RT'] * self.data["bV"][step - 1]))
 
     # Eq 4.6
