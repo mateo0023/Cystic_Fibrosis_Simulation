@@ -997,7 +997,7 @@ class AirwayModel:
         """ADO's apical rate of change in micro-Molar per second (muM / sec)"""
 
         return (- self.data["ADO"][step - 1] * self.data["dH"][step - 1] / self.data["H"][step - 1]
-                + self['V_8_max'] * self.data["AMP"][step - 1] / (
+                + self.co['V_8_max'] * self.data["AMP"][step - 1] / (
                         self.co['K_8_m'] * (
                         1 + self.data["ATP"][step - 1] / self.co['K_IN_atp']
                         + self.data["ADP"][step - 1] / self.co['K_IN_adp']
