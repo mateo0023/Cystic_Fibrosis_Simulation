@@ -27,7 +27,7 @@ class Constants:
         self.data['A_PERM_H20'] = 2.4e-4  # Permeability of H2O through the apical. ------ m/s
         self.data['B_PERM_H20'] = 2.4e-5  # Permeability of H2O through the basolateral. ------ m/s
 
-        # Osmomolarity Constants
+        # Osmomolarity & Concentration Constants
         self.data['B_OSM'] = 279.1  # Osmomolarity on the basolateral membrane. ------ mM
         self.data['PHI'] = 0.93
         self.data['GAMMA'] = 0.76
@@ -37,15 +37,17 @@ class Constants:
             'B_CONS_K'] = 4.0  # Potassium concentration in the basolateral compartment. ------ mM (milli-moles / litter)
         self.data[
             'B_CONS_CL'] = 91.2  # Chloride-ion concentration in the basolateral compartment. ------ mM (milli-moles / litter)
+        self.data['A_CONS_NCL'] = 48.7  # Apical concentration on non-Chloride anions ------ mM
+        self.data['A_CONS_IO'] = 2.7  # Concentration of impermeable osmolytes in the apical compartment. ------ mM (milli-moles / litter)
+        self.data['C_CONS_NCL'] = 69.1  # Cellular concentration on non-Chloride anions ------ mM
+        self.data['C_CONS_IO'] = 30.4  # Concentration of impermeable osmolytes in the cellular compartment. ------ mM (milli-moles / litter)
         self.data['B_ACT_NA'] = self.data['B_CONS_NA'] * self.data['GAMMA']  # Activity of the ion, see above.
         self.data['B_ACT_K'] = self.data['B_CONS_K'] * self.data['GAMMA']
         self.data['B_ACT_CL'] = self.data['B_CONS_CL'] * self.data['GAMMA']
-        self.data['A_ACT_OI'] = (
-                                        self.data['A_CONS_IO'] + self.data['A_CONS_NCL']) * self.data[
-                                    'GAMMA']  # Activity of the non-Chloride ions and the impermeable osmolytes.
-        self.data['C_ACT_OI'] = (
-                                        self.data['C_CONS_IO '] + self.data['C_CONS_NCL']) * self.data[
-                                    'GAMMA']  # Activity of the non-Chloride ions and the impermeable osmolytes.
+        self.data['A_ACT_OI'] = (self.data['A_CONS_IO'] + self.data['A_CONS_NCL']
+                                    * self.data['GAMMA'])  # Activity of the non-Chloride ions and the impermeable osmolytes.
+        self.data['C_ACT_OI'] = (self.data['C_CONS_IO '] + self.data['C_CONS_NCL']
+                                    * self.data['GAMMA'])  # Activity of the non-Chloride ions and the impermeable osmolytes.
 
         # Flow
         self.data['FARADAY'] = 96485  # Faraday's Constant. ------ C / mol
@@ -240,6 +242,7 @@ class AirwayModel:
         :arg step=1: is the step to load the values to, by default will load the values after the initial.
         :returns nothing
     """
+
     # Complete with all variables that will be tracked as column names
     variables = ('Time (min)', 'H', 'H_c', 'dH', 'OSM_a', 'OSM_c', 'aNa', 'aCl', 'aK', 'cNa', 'cCl', 'cK',
                  'aJ_Na', 'pJ_Na', 'aJ_K', 'pJ_K', 'aJ_Cl_CaCC', 'aJ_Cl_CFTR', 'pJ_Cl', 'J_co', 'J_pump',
@@ -269,8 +272,7 @@ class AirwayModel:
                       'mol/(m^2 sec)', 'V', 'A / m^2', 'm/s', 'micro M (muM)')
 
     # Required initial values
-    initial_vars = ('max_steps', 'time_frame', 'H', 'aNa', 'aCl', 'aK', 'cNa', 'cCl', 'cK',
-                    'ATP', 'ADP', 'AMP', 'ADO', 'INO', 'CF')
+    initial_vars = ('max_steps', 'time_frame', 'H', 'CF') + apical_ions + cel_ions + nucleotide
 
     # Initial conditions setup
     def __init__(self, init_data=None, special_constants=None):
@@ -293,6 +295,27 @@ class AirwayModel:
         :exception if there's an issue loading the values, they will be asked manually.
         """
 
+        # Will create the needed dictionary to init the variables
+        if isinstance(init_data, str) and '.csv' in init_data:
+            self.init_pd = pd.read_csv(init_data)
+            init_data = {}
+
+            if all(k in self.init_pd for k in self.initial_vars):
+                for var in self.initial_vars:
+                    if var == 'max_steps':
+                        init_data[var] = int(self.init_pd[var][0])
+                    elif var == 'CF':
+                        init_data[var] = bool(self.init_pd[var][0])
+                    else:
+                        init_data[var] = float(self.init_pd[var][0])
+            
+            for var in self.voltage:
+                if var in self.init_pd:
+                    init_data[var] = float(self.init_pd[var])
+
+            del(self.init_pd)
+
+        # If the right argument was passed or it was rightly processed, start the init_vars
         if isinstance(init_data, dict) and all(k in init_data for k in self.initial_vars):
             self.max_steps = int(init_data['max_steps'])
             # Here we are creating the data-frame from the list of 'self.variables'
@@ -301,20 +324,22 @@ class AirwayModel:
             self.time_frame = float(init_data['time_frame'])
             self.isCF = bool(init_data['CF'])
 
-            for ion in self.ions:
+            self.co = Constants(self.isCF, special_constants)
+
+            for ion in self.apical_ions + self.cel_ions:
                 self.data[ion][0] = self.to_activity(np.absolute(float(init_data[ion])))
 
             if all(v in init_data for v in ('aV', 'bV')):
                 self.data['aV'][0] = float(init_data['aV'])
                 self.data['bV'][0] = float(init_data['bV'])
+
                 if 'pV' in init_data:
                     self.data['pV'][0] = float(init_data['pV'])
                 else:
                     self.data["tV"][0] = self.data["bV"][0] - self.data["aV"][0]
         else:
             self.inputVals()
-
-        self.co = Constants(self.isCF, special_constants)
+            self.co = Constants(self.isCF, special_constants)
 
         # Will add all of the accessibility methods
         self.to_csv = self.data.to_csv
@@ -336,7 +361,7 @@ class AirwayModel:
             self.data["H_c"][0] = self.co['CELL_H']
             self.data["dH"][0] = self.fn_dH()
 
-            if all(v in init_data for v in ('aV', 'bV')):
+            if not all(v in init_data for v in ('aV', 'bV')):
                 self.data["aV"][0] = self.fn_voltage('a')
                 self.data["bV"][0] = self.fn_voltage('b')
                 self.data["tV"][0] = self.data["bV"][0] - self.data["aV"][0]
