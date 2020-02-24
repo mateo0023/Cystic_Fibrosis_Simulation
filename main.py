@@ -11,7 +11,7 @@ AirwayModel = simulation.AirwayModel
 # We need to stop the simulations after any error, else data will be harder to analyze.
 prev_np_err = np.seterr(all='raise')
 # Will be the folder where all of the temporary files will be saved.
-SUB_DIR = './data'
+SUB_DIR = 'data'
 # Will be the MAX files that can be on the SUB_DIR before they are sent to a ZIP file. Doesn't include extra-info
 MAX_FILES = 5
 # Max number of parallel processes.
@@ -66,22 +66,21 @@ def runAll(init_d=None, save_extra=True, sub_dir=SUB_DIR):
             try:
                 gen_data.fn_run(step)
             except:
-                print('Unexpected error at step', i, '\n\t', sys.exc_info()[0:2])
+                print('Unexpected error at step', step, '\n\t', sys.exc_info()[0:2])
                 d_extr['err'] = [sys.exc_info()[0], step, None]
                 # Drop the unfilled rows, they consume space and just complicate things.
-                gen_data.drop(labels=range(i + 1, gen_data.max_steps))
+                gen_data.drop(labels=range(step + 1, gen_data.max_steps))
                 break
     else:
         for step in range(1, init_d['max_steps']):
-            # noinspection PyBroadException
             try:
                 gen_data.fn_run(step)
             except:
-                print('Unexpected error at step', i, '\n\t', sys.exc_info()[0:2])
+                print('Unexpected error at step', step, '\n\t', sys.exc_info()[0:2])
                 d_extr['err'] = [sys.exc_info()[0], step, None]
                 # Drop the unfilled rows, they consume space and just complicate things.
-                gen_data.drop(labels=range(i + 1, gen_data.max_steps))
-                init_d['max_steps'] = i+1
+                gen_data.drop(labels=range(step + 1, gen_data.max_steps))
+                init_d['max_steps'] = step+1
                 break
         # Turn all the activities back into concentration.
         for step in range(init_d['max_steps']):
@@ -104,7 +103,10 @@ def runAll(init_d=None, save_extra=True, sub_dir=SUB_DIR):
         file_name += '_NL'
 
     # Save the file
-    gen_data.to_csv(file_name + '.csv', sub_dir + '/')
+    if os.path.isdir(sub_dir):     # Checking if dir exists
+        gen_data.to_csv(sub_dir + '/' + file_name + '.csv')
+    else:
+        gen_data.to_csv(file_name + '.csv')
 
     if 'err' in d_extr:
         # The step at which the error occurred
