@@ -220,6 +220,19 @@ def zipFiles(file_names=flsInDir(SUB_DIR), zip_name=None, delete_after=False):
     else:
         return True
 
+def loadInitialValues():
+    initial_values = []
+    initial_pd = pd.read_csv('initial-values.csv')
+    for i in range(len(initial_pd)):
+        initial_values.append({})
+        for var in initial_pd:
+            if var == 'max_steps':
+                initial_values[-1][var] = int(initial_pd[var][i])
+            elif var == 'CF':
+                initial_values[-1][var] = bool(initial_pd[var][i])
+            else:
+                initial_values[-1][var] = float(initial_pd[var][i])
+    return initial_values
 
 if __name__ == '__main__':
     # Empty the SUB_DIR folder before starting. If there are files inside, try to zip and delete them.
@@ -234,17 +247,7 @@ if __name__ == '__main__':
     # If it can't be done (FileNotFound error), then run only one simulation, asking for all of the input values.
     try:
         # Prepare the initial values into a list of dictionaries.
-        initial_values = []
-        initial_pd = pd.read_csv('initial-values.csv')
-        for i in range(len(initial_pd)):
-            initial_values.append({})
-            for var in initial_pd:
-                if var == 'max_steps':
-                    initial_values[-1][var] = int(initial_pd[var][i])
-                elif var == 'CF':
-                    initial_values[-1][var] = bool(initial_pd[var][i])
-                else:
-                    initial_values[-1][var] = float(initial_pd[var][i])
+        initial_values = loadInitialValues()
 
         print('Loaded the initial values.')
         print('There will be ', len(initial_values), ' simulations run. Will run parallel in sets of ',
