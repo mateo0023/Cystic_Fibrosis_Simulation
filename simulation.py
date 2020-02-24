@@ -269,8 +269,6 @@ class AirwayModel:
                     :var 'H': initial water height (meters).
                     :var Molar concentration for all the relevant ions (mM).
                     :var Concentrations for all nucleotides (ATP, ..., ADO, INO) in muM (micro-moles).
-                * a pandas.DataFrame:
-                    It will be used to load an already full DataFrame.
                 * path to a .csv:
                     It will be used to load the DataFrame from the .csv with the pandas.read_csv() function.
                 * DEFAULT: None (it will ask the user for values).
@@ -324,8 +322,6 @@ class AirwayModel:
                     :var 'H': initial water height (meters).
                     :var Molar concentration for all the relevant ions (mM).
                     :var Concentrations for all nucleotides (ATP, ..., ADO, INO) in muM (micro-moles).
-                * a pandas.DataFrame:
-                    It will be used to load an already full DataFrame.
                 * path to a .csv:
                     It will be used to load the DataFrame from the .csv with the pandas.read_csv() function.
                 * DEFAULT: None (it will ask the user for values).
@@ -338,13 +334,13 @@ class AirwayModel:
             init_data = {}
 
             if all(k in self.init_pd for k in self.initial_vars):
-                for var in self.initial_vars:
-                    if var == 'max_steps':
-                        init_data[var] = int(self.init_pd[var][0])
-                    elif var == 'CF':
-                        init_data[var] = bool(self.init_pd[var][0])
+                for key, val in enumerate(self.initial_vars):
+                    if key == 'max_steps':
+                        init_data[key] = int(val[0])
+                    elif key == 'CF':
+                        init_data[key] = bool(val[0])
                     else:
-                        init_data[var] = float(self.init_pd[var][0])
+                        init_data[key] = float(val[0])
             
             for var in self.voltage:
                 if var in self.init_pd:
@@ -621,6 +617,15 @@ class AirwayModel:
         self.data["AMP"][step] = self.data["AMP"][step - 1] + self.fn_dAMP(step) * self.time_frame
         self.data["ADO"][step] = self.data["ADO"][step - 1] + self.fn_dADO(step) * self.time_frame
         self.data["INO"][step] = self.data["INO"][step - 1] + self.fn_dINO(step) * self.time_frame
+
+    def fn_runAll(self):
+        """
+        Very self explanatory by the name
+        it will run the simulation from step 1 till the max ammount of steps
+        """
+        
+        for step in range(1, self.max_steps):
+            self.fn_run(step)
 
     def fn_aJ_H2O(self, step=1):
         return self.co['A_PERM_H20'] * (self.data["OSM_c"][step - 1] - self.data["OSM_a"][step - 1])
