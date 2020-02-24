@@ -44,17 +44,22 @@ The constants class now supports custom values. Passed as a dictionary. The unit
 
 # Intended Use
 
-1. Create an instance of a class:
+1. *Optional* Create a dictionary containing the modified constants.
+2. Create an instance of a class:
    * The `init_data` can be a Dictionary, path to a csv file containing the values or left blank (user will be prompted to input the values manually)
    * `special_constants` a dictionary with the constants that will have a different value than on the paper.  The general naming is `where_what_ofWhat` and *concentration* is *"CONS"* because it has the same sound as it would. However, checking the file `simulation.py` for all the corresponding variable names is more recommended and probably necessary.
-2. Run the function `AirwayModel.fn_runAll()`. It will complete the simulations from steps 1 through max_steps -1.
-3. Export the data to a CSV file. This step has been made easier by declaring the following under the initializer `self.to_csv = self.data.to_csv`. That means that you're calling the `to_csv` function on the Pandas.DataFrame object  that is the simulation.
+3. Run the function `AirwayModel.fn_runAll()`. It will complete the simulations from steps 1 through max_steps -1.
+4. Export the data to a CSV file. This step has been made easier by declaring the following under the initializer `self.to_csv = self.data.to_csv`. That means that you're calling the `to_csv` function on the `Pandas.DataFrame` object  that is the simulation.
 
 ```python
 import simulation as sim
 
+# This will modify the Max flow of the Na-K-ATPase pump to
+# 	5.3 * 10 ^ -6 milli-mol m^-2 s^-1
+new_constant_vals = {'J_Pump_max': 5.3e-6}
+
 # The csv file is recomended to follow the template of the one in the repository.
-simulated_data = sim.AirwayModel('initial-values.csv')
+simulated_data = sim.AirwayModel('initial-values.csv', new_constant_vals)
 simulated_data.fn_runAll()
 
 simulated_data.to_csv('Exported-File.csv')
