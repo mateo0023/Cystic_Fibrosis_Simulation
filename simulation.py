@@ -346,18 +346,18 @@ class AirwayModel:
 			self.init_pd = pd.read_csv(init_data)
 			init_data = {}
 
-			if all(k in self.init_pd for k in self.initial_vars):
-				for key, val in enumerate(self.initial_vars):
+			if all(k in self.init_pd for k in self.initial_vars):a
+				for key in self.initial_vars:
 					if key == 'max_steps':
-						init_data[key] = int(val[0])
+						init_data[key] = int(self.init_pd[key][0])
 					elif key == 'CF':
-						init_data[key] = bool(val[0])
+						init_data[key] = bool(self.init_pd[key][0])
 					else:
-						init_data[key] = float(val[0])
+						init_data[key] = float(self.init_pd[key][0])
 			
 			for var in self.voltage:
 				if var in self.init_pd:
-					init_data[var] = float(self.init_pd[var])
+					init_data[var] = float(self.init_pd[var][0])
 
 			del(self.init_pd)
 
