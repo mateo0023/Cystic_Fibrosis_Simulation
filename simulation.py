@@ -346,7 +346,7 @@ class AirwayModel:
 			self.init_pd = pd.read_csv(init_data)
 			init_data = {}
 
-			if all(k in self.init_pd for k in self.initial_vars):a
+			if all(k in self.init_pd for k in self.initial_vars):
 				for key in self.initial_vars:
 					if key == 'max_steps':
 						init_data[key] = int(self.init_pd[key][0])
