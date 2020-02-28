@@ -640,6 +640,30 @@ class AirwayModel:
 		for step in range(1, self.max_steps):
 			self.fn_run(step)
 
+	def setParams(self):
+		"""
+		This will be used to estimate the correct parameters for the simulation.
+		It will be vary basic, go through all the values (as guiven in the paper) between the mean
+		and two standard deviations. And will use the best set of parameters that fits the steady state.
+
+		We will need
+		J_Na^a + J_Na^b = 0
+		J_Cl^a + J_Cl^b = 0
+		J_K^a + J_K^b = 0
+		-I_Cl^a + I_Na^a + I_K^a = 0
+		-I_Cl^b + I_Na^b + I_K^b = 0
+
+		Coeficent of variation = n/mean
+		we need to cv to get the value
+		So range(mean - mean * 2 * cv, mean + mean * 2 * cv)
+			Might need want to create a generator for this speciefic range
+		nested for loops
+		Will need to create a vector or DataFrame to store all of them beforehand
+
+		"""
+		pass
+		
+
 	def fn_aJ_H2O(self, step=1):
 		return self.co['A_PERM_H20'] * (self.data["OSM_c"][step - 1] - self.data["OSM_a"][step - 1])
 
