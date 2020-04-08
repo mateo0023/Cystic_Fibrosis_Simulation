@@ -4,9 +4,28 @@ This repository hosts a model for airway epithelial cells. The model was develop
 
 The model is heavily based on the one done by [Sandefour et. al.](https://www.ncbi.nlm.nih.gov/pubmed/28808008), with a few modifications, currently the cotransporter being used is the one proposed by Benjamin-Franklin in 1997.
 
-# What is this different on this branch?
+# Libraries in Use
 
-This leaves only the `AirwayModel` class, removes everything else from the `.py` files. It's better when using the model for other applications such as running the simulations with the MATLAB programming language.
+```python
+multiprocessing.pool.Pool
+pandas
+numpy
+scipy
+datetime
+zipfile
+sys
+os
+```
+
+### In `simulation.py`
+
+```
+pandas
+numpy
+scipy
+```
+
+
 
 # `initial-values.csv`
 
@@ -38,29 +57,50 @@ They will be calculated based on the given values.
 * Voltage (`aV` and `bV`) volts.
 * Cystic Fibrosis (`CF`): 1 or *'CF'* (modeling cystic fibrosis) **or** 0 or *'NL'* (normal conditions).
 
-# Constants
+# `simulation.py`
 
-The constants class now supports custom values. Passed as a dictionary. The units are the same as in the paper [Sandefour et. al.](https://www.ncbi.nlm.nih.gov/pubmed/28808008)
+This file contains two classes, `Constants` and `AirwayModel`. It is everything that the model needs to work, it is designed in this way for easier exports to other programs.
+
+## Constants
+
+Is basically a big dictionary for the `AirwayModel` to save it's parameter values.
+
+The `Constants` class now calculates the parameters based on the following steady state values:
+
+| $\frac{dN^C_{Na}}{dt} = 0$ | $\frac{dN^C_{K}}{dt}=0$ | $\frac{dN^C_{Cl}}{dt}=0$ |
+| :------------------------: | :---------------------: | :----------------------: |
+|    $\frac{dV_a}{dt}=0$     |                         |   $\frac{dV_b}{dt}=0$    |
+
+The units are the same as in the paper [Sandefour et. al.](https://www.ncbi.nlm.nih.gov/pubmed/28808008)
+
+## AirwayModel
+
+This is the *big boy*, it has all of the functions of the model. It is meant to be run with the `AirwayModel.fn_runAll()` function
 
 # Intended Use
 
-1. *Optional* Create a dictionary containing the modified constants.
-2. Create an instance of a class:
+## Running `main.py`
+
+If the file `initial-values.csv` has more than one line with values, it will run the different simulations in parallel of up two 8 simulations at a time. It will automatically save files after the run is done.
+
+## Importing `simulation.py`
+
+1. Create an instance of a class:
    * The `init_data` can be a Dictionary, path to a csv file containing the values or left blank (user will be prompted to input the values manually)
-   * `special_constants` a dictionary with the constants that will have a different value than on the paper.  The general naming is `where_what_ofWhat` and *concentration* is *"CONS"* because it has the same sound as it would. However, checking the file `simulation.py` for all the corresponding variable names is more recommended and probably necessary.
-3. Run the function `AirwayModel.fn_runAll()`. It will complete the simulations from steps 1 through max_steps -1.
-4. Export the data to a CSV file. This step has been made easier by declaring the following under the initializer `self.to_csv = self.data.to_csv`. That means that you're calling the `to_csv` function on the `Pandas.DataFrame` object  that is the simulation.
+   * `special_constants` a dictionary with the constants that will have a different value than on the paper. **Recommended only when testing**. The general naming is `where_what_ofWhat` and *concentration* is *"CONS"* because it has the same sound as it would. However, checking the file `simulation.py` for all the corresponding variable names is more recommended and probably necessary.
+3. Run the function `AirwayModel.fn_runAll()`. It will complete the simulations from steps `1` through `max_steps -1`.
+4. Export the data to a CSV file. This step has been made easier by declaring `self.to_csv = self.data.to_csv`  under `AirwayModel.__init__` . That means that you're calling the `to_csv` function on the `Pandas.DataFrame` object  that is the simulation.
 
 ```python
 import simulation as sim
 
-# This will modify the Max flow of the Na-K-ATPase pump to
-# 	5.3 * 10 ^ -6 milli-mol m^-2 s^-1
-new_constant_vals = {'J_Pump_max': 5.3e-6}
-
 # The csv file is recomended to follow the template of the one in the repository.
-simulated_data = sim.AirwayModel('initial-values.csv', new_constant_vals)
+simulated_data = sim.AirwayModel('initial-values.csv')
 simulated_data.fn_runAll()
 
 simulated_data.to_csv('Exported-File.csv')
 ```
+
+
+
+***Read the documentation in the files for more information***

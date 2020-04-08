@@ -5,8 +5,7 @@ import datetime
 import zipfile
 import sys
 import os
-import simulation
-AirwayModel = simulation.AirwayModel
+from simulation import *
 
 # We need to stop the simulations after any error, else data will be harder to analyze.
 prev_np_err = np.seterr(all='raise')
@@ -139,6 +138,11 @@ def runAll(init_d=None, save_extra=False, sub_dir=SUB_DIR):
 		d_extr['runtime'] = [str(end_time - init_time), None, None, None]
 		d_extr['start-end'] = [str(init_time), str(end_time), None, None]
 		d_extr['time_frame - max_step'] = [gen_data.time_frame, gen_data.max_steps, None, None]
+		
+		# Save the parameters
+		for val, key in enumerate(gen_data.co.data):
+			d_extr[key] = val
+
 		# Save the extra data about the run
 		if os.path.isdir(sub_dir):
 			pd.DataFrame(d_extr, index=['initial', 'middle', 'final', 'average']).to_csv(

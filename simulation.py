@@ -427,6 +427,9 @@ class Constants:
 		
 
 
+
+
+
 # A class with all the necessary functions to run an ASL Model.
 class AirwayModel:
 	"""
@@ -531,8 +534,6 @@ class AirwayModel:
 
 			del(self.init_pd)
 
-		self.co = Constants(self.isCF, constants=special_constants)
-
 		# If the right argument was passed or it was rightly processed, start the init_vars
 		if isinstance(init_data, dict) and all(k in init_data for k in self.initial_vars):
 			self.max_steps = int(init_data['max_steps'])
@@ -542,6 +543,7 @@ class AirwayModel:
 			self.time_frame = float(init_data['time_frame'])
 			self.isCF = bool(init_data['CF'])
 
+			self.co = Constants(self.isCF, constants=special_constants)
 			
 			self.data['H'][0] = float(init_data['H'])
 
@@ -561,7 +563,7 @@ class AirwayModel:
 				else:
 					self.data["tV"][0] = self.data["bV"][0] - self.data["aV"][0]
 		else:
-			self.inputVals()
+			self.inputVals(special_constants)
 		
 		if special_constants is None:
 			self.co.getSteadyVals(self.data.head(1))
@@ -651,11 +653,13 @@ class AirwayModel:
 				return False
 		return True
 
-	def inputVals(self):
+	def inputVals(self, special_constants=None):
 		"""
 		This function is used to ask for all of the necessary initial values. It will go one by one
 		of the variables in AirwayModel.initial_vars asking the user to manually input then and then
-		load it to the corresponding variable. 
+		load it to the corresponding variable.
+
+		:arg special_constants	Dictionary with values with wich to overwrite the default constants.
 		"""
 		self.max_steps = int(input('Enter how many steps the run will take: '))
 		# Here we are creating the data-frame from the list of 'self.variables'
@@ -669,6 +673,8 @@ class AirwayModel:
 		else:
 			self.isCF = False
 			print('\t\tNormal Conditions activated.')
+
+		self.co = Constants(self.isCF, constants=special_constants)
 
 		self.time_frame = float(input('Enter how many seconds each step represents: '))
 
