@@ -1,22 +1,26 @@
 import pandas as pd
 import numpy as np
-
+from itertools import product as prod
+from scipy import optimize
 
 class Constants:
 	"""
 	This is a class that will be used to store the values of the constants.
 	"""
 
-	def __init__(self, cf, constants=None):
+	def __init__(self, cf, init_vals=None, constants=None):
 		"""
 		It will create all of the necessary constants for the model to run.
 
 		General Naming: where_what_ofWhat
 			* Concentration is "CONS" because it sounds closer.
 		
-		The cf is a boolean whether to default to the Cystic Fibrosis or regular constants
-		The constants should be a dictionary with the precisse name and value of the constants to which one
-			wants to override the default value
+		:arg cf			The cf is a boolean whether to default to the Cystic Fibrosis or regular constants
+		:arg init_vals	The initial values of the system (necessary to calculate the parameters).
+						The calculation will be done if constants is None and init_vals is set.
+		:arg constants	The constants should be a dictionary with the precisse name and value of the
+						constants to which one wants to override the default value.
+
 		"""
 		self.isCF = cf
 
@@ -24,21 +28,38 @@ class Constants:
 
 		if self.isCF:
 			# This should have all of the parameters that need to be calculated
-			self.variable_params = {'P_PERM_NA': (5e-8, 0.08), 'P_PERM_K': (7.2e-10, .15),
-									'P_PERM_CL': (1.2e-8, 0.07), 'J_Pump_max': (4.4e-6, 0.09),
-									'CACC_PERM_MAX': (6.9e-9, 0.03), 'CACC_ATP_AT_HALF_PERM': (3.6e-5, 0.28),
-									'BK_PERM_MAX': (4.4e-9, 0.16), 'BK_ATP_AT_HALF_PERM': (1.5e-3, 0.38),
-									'ENAC_PERM_MAX': (2.3e-8, 0.08), 'ENAC_ATP_AT_HALF_PERM': (5.1e-2, 0.07),
-									'CAKC_PERM_MAX': (2.3e-7, 0.14), 'CAKC_ATP_AT_HALF_PERM': (3.3e-3, 0.15)}
+			self.parametersMeanVariance = {'P_PERM_NA': (5e-8, 0.08), 'P_PERM_K': (7.2e-10, .15),
+											'P_PERM_CL': (1.2e-8, 0.07), 'J_Pump_max': (4.4e-6, 0.09),
+											'CACC_PERM_MAX': (6.9e-9, 0.03), 'CACC_ATP_AT_HALF_PERM': (3.6e-5, 0.28),
+											'BK_PERM_MAX': (4.4e-9, 0.16), 'BK_ATP_AT_HALF_PERM': (1.5e-3, 0.38),
+											'ENAC_PERM_MAX': (2.3e-8, 0.08), 'ENAC_ATP_AT_HALF_PERM': (5.1e-2, 0.07),
+											'CAKC_PERM_MAX': (2.3e-7, 0.14), 'CAKC_ATP_AT_HALF_PERM': (3.3e-3, 0.15)}
+			self.variable_params = [5e-08, 7.2e-10, 1.2e-08, 4.4e-06, 6.9e-09,
+									3.6e-05, 4.4e-09, 0.0015, 2.3e-08, 0.051, 2.3e-07, 0.0033]
+			self.indexDict = {"P_PERM_NA": 0, "P_PERM_K": 1,
+								"P_PERM_CL": 2,"J_Pump_max": 3,
+								"CACC_PERM_MAX": 4, "CACC_ATP_AT_HALF_PERM": 5,
+								"BK_PERM_MAX": 6, "BK_ATP_AT_HALF_PERM": 7,
+								"ENAC_PERM_MAX": 8, "ENAC_ATP_AT_HALF_PERM": 9,
+								"CAKC_PERM_MAX": 10, "CAKC_ATP_AT_HALF_PERM": 11}
 		else:
 			# This should have all of the parameters that need to be calculated
-			self.variable_params = {'P_PERM_NA': (1e-8, 0.06), 'P_PERM_K': (3.4e-10, 0.24),
-									'P_PERM_CL': (3.9e-8, 0.05), 'J_Pump_max': (1.5e-6, 0.06),
-									'CACC_PERM_MAX': (4.8e-8, 0.25), 'CACC_ATP_AT_HALF_PERM': (8.1e-5, 0.37),
-									'BK_PERM_MAX': (7.4e-10, 0.22), 'BK_ATP_AT_HALF_PERM': (1.3e-3, 0.43),
-									'ENAC_PERM_MAX': (8.3e-9, 0.07), 'ENAC_ATP_AT_HALF_PERM': (7.2e-2, 0.23), 'ENAC_ADO_AT_HALF_PERM': (3.1e-1, 0.28),
-									'CAKC_PERM_MAX': (5.7e-8, 0.08), 'CAKC_ATP_AT_HALF_PERM': (2.1e-4, 0.26),
-									'CFTR_PERM_MAX': (9.4e-8, 0.29), 'CFTR_ATP_AT_HALF_PERM': (6.8e-5, 0.34), 'CFTR_ADO_AT_HALF_PERM': (1.9e-1, 0.53)}
+			self.paremetersMeanVariance = {'P_PERM_NA': (1e-8, 0.06), 'P_PERM_K': (3.4e-10, 0.24),
+											'P_PERM_CL': (3.9e-8, 0.05), 'J_Pump_max': (1.5e-6, 0.06),
+											'CACC_PERM_MAX': (4.8e-8, 0.25), 'CACC_ATP_AT_HALF_PERM': (8.1e-5, 0.37),
+											'BK_PERM_MAX': (7.4e-10, 0.22), 'BK_ATP_AT_HALF_PERM': (1.3e-3, 0.43),
+											'ENAC_PERM_MAX': (8.3e-9, 0.07), 'ENAC_ATP_AT_HALF_PERM': (7.2e-2, 0.23), 'ENAC_ADO_AT_HALF_PERM': (3.1e-1, 0.28),
+											'CAKC_PERM_MAX': (5.7e-8, 0.08), 'CAKC_ATP_AT_HALF_PERM': (2.1e-4, 0.26),
+											'CFTR_PERM_MAX': (9.4e-8, 0.29), 'CFTR_ATP_AT_HALF_PERM': (6.8e-5, 0.34), 'CFTR_ADO_AT_HALF_PERM': (1.9e-1, 0.53)}
+			self.variable_params = [1e-08, 3.4e-10, 3.9e-08, 1.5e-06, 4.8e-08, 8.1e-05, 7.4e-10, 0.0013,
+									8.3e-09, 0.072, 0.31, 5.7e-08, 0.00021, 9.4e-08, 6.8e-05, 0.19]
+			self.indexDict = {"P_PERM_NA": 0, "P_PERM_K": 1,
+							  "P_PERM_CL": 2, "J_Pump_max": 3,
+							  "CACC_PERM_MAX": 4, "CACC_ATP_AT_HALF_PERM": 5,
+							  "BK_PERM_MAX": 6, "BK_ATP_AT_HALF_PERM": 7,
+							  "ENAC_PERM_MAX": 8, "ENAC_ATP_AT_HALF_PERM": 9, "ENAC_ADO_AT_HALF_PERM": 10,
+							  "CAKC_PERM_MAX": 11, "CAKC_ATP_AT_HALF_PERM": 12,
+							  "CFTR_PERM_MAX": 13, "CFTR_ATP_AT_HALF_PERM": 14, "CFTR_ADO_AT_HALF_PERM": 15}
 
 		# Create lambda functions for the constants that are calculated based on others.
 		self.calcCELL_H = lambda: (self.data['CELL_VOL'] / 2) ** (1 / 3) * 2e-6
@@ -259,9 +280,151 @@ class Constants:
 
 			if any(k in constants for k in self.cotransporter_benj):
 				self.data['COT_Z'] = self.calcCOT_Z()
+		if init_vals is not None and constants is None:
+			self.getSteadyVals(init_vals)
 
 	def __getitem__(self, item):
 		return self.data[item]
+
+	def getSteadyVals(self, init_vals):
+		"""
+		This will calculate the parameters according to the steady state of the system.
+
+		It sets the five equations to 0:
+			\\frac{dN_Na^c}{dt} = 0
+			\\frac{dN_K^c}{dt} = 0
+			\\frac{dN_C^cl}{dt} = 0
+			\\frac{dV_a}{dt} = 0
+			\\frac{dV_b}{dt} = 0
+		
+		Uses the Scipy.optimize.fsolve function.
+		"""
+
+		# Eq 5.1.1
+		par_p_CaCC = lambda p: p[self.indexDict['CACC_PERM_MAX']] / (1 + p[self.indexDict['CACC_ATP_AT_HALF_PERM']] / init_vals["ATP"])
+
+		# Eq 5.1.2
+		par_p_CFTR_NL = lambda p: p[self.indexDict['CFTR_PERM_MAX']] / (1 + p[self.indexDict['CFTR_ADO_AT_HALF_PERM']] / init_vals["ADO"] +
+											p[self.indexDict['CFTR_ATP_AT_HALF_PERM']] / init_vals["ATP"])
+
+		# Eq 5.2
+		par_p_BK = lambda p: p[self.indexDict['BK_PERM_MAX']] / (1 + p[self.indexDict['BK_ATP_AT_HALF_PERM']] / init_vals["ATP"])
+
+		# Eq 5.3 for NL
+		par_p_ENaC_NL = lambda p: p[self.indexDict['ENAC_PERM_MAX']] / (1 + init_vals['ATP'] / p[self.indexDict['ENAC_ATP_AT_HALF_PERM']]
+											+ init_vals['ADO'] / p[self.indexDict['ENAC_ADO_AT_HALF_PERM']])
+
+		par_p_ENaC_CF = lambda p: p[self.indexDict['ENAC_PERM_MAX']] / (1 +
+			init_vals['ATP'] / p[self.indexDict['ENAC_ATP_AT_HALF_PERM']])
+
+		# Eq 5.4
+		par_p_CaKC = lambda p: p[self.indexDict['CAKC_PERM_MAX']] / (1 + p[self.indexDict['CAKC_ATP_AT_HALF_PERM']] / init_vals['ATP'])
+
+
+		if self.isCF:
+			par_p_ENaC = par_p_ENaC_CF
+			par_p_CFTR = par_p_CFTR_NL
+		else:
+			par_p_ENaC = par_p_ENaC_NL
+			par_p_CFTR = lambda x: 0
+
+		par_aJ_Na = lambda param: par_p_ENaC(param) * init_vals["aV"] * self.data['F_RT'] \
+				* (init_vals["aNa"] -
+					init_vals["cNa"] * np.exp(init_vals["aV"] * self.data['F_RT'])) \
+				/ (np.exp(init_vals["aV"] * self.data['F_RT']) - 1)
+
+		# Eq 4.2
+		par_aJ_K = lambda param: par_p_BK(param) * init_vals["aV"] * self.data['F_RT'] / (
+					np.exp(init_vals["aV"] * self.data['F_RT']) - 1) \
+				* (init_vals["aK"] - init_vals["cK"] * np.exp(
+				self.data['F_RT'] * init_vals["aV"]))
+
+		# Eq 4.3
+		par_aJ_Cl = lambda param: -(par_p_CaCC(param) + par_p_CFTR(param)) \
+				* self.data['F_RT'] * init_vals["aV"] / (np.exp(self.data['F_RT'] * init_vals["aV"]) - 1) \
+				* (init_vals["cCl"] - init_vals["aCl"] * np.exp(
+				self.data['F_RT'] * init_vals["aV"]))
+
+		# Eq 4.5
+		par_bJ_Cl = lambda param: - param[self.indexDict['P_PERM_CL']] * self.data['F_RT'] * init_vals["bV"] \
+				/ (np.exp(self.data['F_RT'] * init_vals["bV"]) - 1) \
+				* (init_vals['cCl'] - self.data['B_ACT_CL'] * np.exp(
+				self.data['F_RT'] * init_vals["bV"]))
+
+		# Eq 4.6
+		par_bJ_K = lambda param: param[self.indexDict['P_PERM_K']] * self.data['F_RT'] * init_vals["bV"] \
+				/ (np.exp(self.data['F_RT'] * init_vals["bV"]) - 1) \
+				* (self.data['B_ACT_K'] - init_vals["cK"] * np.exp(self.data['F_RT'] * init_vals["bV"]))
+
+		# Eq 4.7
+		par_J_pump = lambda param: param[self.indexDict['J_Pump_max']] * (init_vals['cNa']
+											/ (init_vals['cNa']
+											+ self.data['K_Na_In_pump'] * (1 + init_vals['cK']
+																			/ self.data['K_K_in_pump']))) ** 3 \
+				* (self.data['B_ACT_K'] / (self.data['B_ACT_K'] +
+											self.data['K_K_ext_pump'] * (
+													1 + self.data['B_ACT_NA'] / self.data['K_Na_ext_pump']))) ** 2
+
+		# Eq 4.10
+		par_pJ_Na = lambda param: param[self.indexDict['P_PERM_NA']] * self.data['F_RT'] * init_vals["tV"] \
+				/ (np.exp(self.data['F_RT'] * init_vals["tV"]) - 1) \
+				* (self.data['B_CONS_NA'] - init_vals["aNa"] * np.exp(
+				self.data['F_RT'] * init_vals["tV"]))
+
+		# Eq 4.11
+		par_pJ_K = lambda param: param[self.indexDict['P_PERM_K']] * self.data['F_RT'] * init_vals["tV"] \
+				/ (np.exp(self.data['F_RT'] * init_vals["tV"]) - 1) \
+				* (self.data['B_CONS_K'] - init_vals["aK"] * np.exp(self.data['F_RT'] * init_vals["tV"]))
+
+		# Eq 4.12
+		par_pJ_Cl = lambda param: - param[self.indexDict['P_PERM_CL']] * self.data['F_RT'] * init_vals["tV"] \
+				/ (np.exp(self.data['F_RT'] * init_vals["tV"]) - 1) \
+				* (init_vals["aCl"] - self.data['B_CONS_CL'] * np.exp(
+				self.data['F_RT'] * init_vals["tV"]))
+
+
+		# Eq 3.2.1
+		par_dcN_Na = lambda parameters: par_aJ_Na(parameters) + init_vals['J_co'] - 3 * par_J_pump(parameters)
+
+		# Eq 3.2.2
+		par_dcN_K = lambda parameters: par_aJ_K(parameters) + par_bJ_K(parameters) + init_vals['J_co'] + 2 * \
+				par_J_pump(parameters)
+
+		# Eq 3.2.3
+		par_dcN_Cl = lambda parameters: par_aJ_Cl(parameters) + par_bJ_Cl(parameters) + 2 * init_vals['J_co']
+
+
+
+		# Eq 7.1
+		par_pI = lambda param: - par_pJ_Na(param) + par_pJ_Cl(param) - par_pJ_K(param)
+
+		# Eq 7.2
+		par_aI = lambda param: - par_aJ_Na(param) + par_aJ_Cl(param) - par_aJ_K(param)
+
+		# Eq 7.3
+		par_bI = lambda param: par_J_pump(param) + par_bJ_Cl(param) - par_aJ_K(param)
+
+
+		# Eq 6.1
+		par_daV = lambda parameters: par_pI(parameters) - par_aI(parameters)
+
+		par_dbV = lambda parameters: par_pI(parameters) + par_bI(parameters)
+
+		# This is the system of 5 euqatons that is supposed to be 0
+		def system(p): 
+			f = [0] * len(p)
+			f[0] = par_dcN_Na(p)	# \frac{dN_{Na}^c}{dt}
+			f[1] = par_dcN_K(p)		# \frac{dN_K^c}{dt}
+			f[2] = par_dcN_Cl(p)	# \frac{dN_{Cl}^c}{dt}
+			f[3] = par_daV(p)		# \frac{dV_a}{dt}
+			f[4] = par_dbV(p)		# \frac{dV_b}{dt}
+			return f
+		
+		param = optimize.fsolve(system, self.variable_params)
+
+		for index, key in enumerate(self.indexDict):
+			self.data[key] = param[index]
+		
 
 
 # A class with all the necessary functions to run an ASL Model.
@@ -322,6 +485,10 @@ class AirwayModel:
 	# Required initial values
 	initial_vars = ('max_steps', 'time_frame', 'H', 'CF') + apical_ions + cel_ions + nucleotide
 
+	# Text to display when asking for the variables
+	ions_user_friendly_text = {'aNa': "apcial sodium", 'aCl': "apical chloride", 'aK': "apical potassium",
+						 'cNa': "cellular sodium", 'cCl': "cellular chloride", 'cK': "cellular potassium"}
+
 	# Initial conditions setup
 	def __init__(self, init_data=None, special_constants=None):
 		"""
@@ -338,6 +505,9 @@ class AirwayModel:
 				* path to a .csv:
 					It will be used to load the DataFrame from the .csv with the pandas.read_csv() function.
 				* DEFAULT: None (it will ask the user for values).
+		:arg special_constants (Optional)
+				Dictionary with the name of the parameters to overwite. If it is set, it will not calculate
+					the parameters that fit the steady state.
 		:exception if there's an issue loading the values, they will be asked manually.
 		"""
 
@@ -361,6 +531,8 @@ class AirwayModel:
 
 			del(self.init_pd)
 
+		self.co = Constants(self.isCF, constants=special_constants)
+
 		# If the right argument was passed or it was rightly processed, start the init_vars
 		if isinstance(init_data, dict) and all(k in init_data for k in self.initial_vars):
 			self.max_steps = int(init_data['max_steps'])
@@ -369,8 +541,6 @@ class AirwayModel:
 
 			self.time_frame = float(init_data['time_frame'])
 			self.isCF = bool(init_data['CF'])
-
-			self.co = Constants(self.isCF, special_constants)
 
 			
 			self.data['H'][0] = float(init_data['H'])
@@ -392,7 +562,9 @@ class AirwayModel:
 					self.data["tV"][0] = self.data["bV"][0] - self.data["aV"][0]
 		else:
 			self.inputVals()
-			self.co = Constants(self.isCF, special_constants)
+		
+		if special_constants is None:
+			self.co.getSteadyVals(self.data.head(1))
 
 		# Will add all of the accessibility methods
 		self.to_csv = self.data.to_csv
@@ -502,10 +674,29 @@ class AirwayModel:
 
 		self.data['H'][0] = float(input('Enter the ASL height in meters: '))
 
-		for ion in self.initial_vars[3:9]:
-			self.data[ion][0] = np.absolute(float(input('Enter the value for ' + ion + ' (in mM): ')))
-		for nucl in self.initial_vars[9:-1]:
+		for ion in self.apical_ions + self.cel_ions:
+			self.data[ion][0] = np.absolute(float(input('Enter the value for ' + self.ions_user_friendly_text[ion] + ' (in mM): ')))
+		for nucl in self.nucleotide:
 			self.data[nucl][0] = np.absolute(float(input('Enter the value for ' + nucl + ' (in micro-M): ')))
+		
+		aV = input('Enter the value for apical voltage in Volts (leave blank for it to be calculated): ')
+		bV = input('Enter the value for basolateral voltage in Volts (leave blank for it to be calculated): ')
+		tV = input('Enter the value for transmembrane (paracellular) voltage in Volts (leave blank for it to be calculated): ')
+		
+		if aV == '':
+			self.data["aV"][0] = self.fn_voltage('a')
+		else:
+			self.data['aV'][0] = float(aV)
+
+		if bV == '':
+			self.data["bV"][0] = self.fn_voltage('b')
+		else:
+			self.data['bV'][0] = float(bV)
+		
+		if tV == '':
+			self.data["tV"][0] = self.data["bV"][0] - self.data["aV"][0]
+		else:
+			self.data['pV'][0] = float(tV)
 
 	# Get section, will return a dictionary with the data on the step.
 	def getSection(self, variables, steps):
@@ -639,6 +830,28 @@ class AirwayModel:
 		
 		for step in range(1, self.max_steps):
 			self.fn_run(step)
+
+	def setParams(self):
+		"""
+		This will be used to estimate the correct parameters for the simulation.
+		It will be vary basic, go through all the values (as guiven in the paper) between the mean
+		and two standard deviations. And will use the best set of parameters that fits the steady state.
+
+		We will need
+		J_Na^a + J_Na^b = 0
+		J_Cl^a + J_Cl^b = 0
+		J_K^a + J_K^b = 0
+		-I_Cl^a + I_Na^a + I_K^a = 0
+		-I_Cl^b + I_Na^b + I_K^b = 0
+
+		Coeficent of variation = n/mean
+		we need to cv to get the value
+		So range(mean - mean * 2 * cv, mean + mean * 2 * cv)
+			Might need want to create a generator for this speciefic range
+		nested for loops
+		Will need to create a vector or DataFrame to store all of them beforehand
+		"""
+		pass
 
 	def fn_aJ_H2O(self, step=1):
 		return self.co['A_PERM_H20'] * (self.data["OSM_c"][step - 1] - self.data["OSM_a"][step - 1])
