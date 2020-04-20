@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from itertools import product as prod
-from scipy import optimize
+from scipy.optimize import least_squares
 
 class Constants:
 	"""
@@ -297,7 +297,7 @@ class Constants:
 			\\frac{dV_a}{dt} = 0
 			\\frac{dV_b}{dt} = 0
 		
-		Uses the Scipy.optimize.fsolve function.
+		Uses the Scipy.optimize.least_squares function.
 		"""
 
 		# Eq 5.1.1
@@ -394,7 +394,6 @@ class Constants:
 		par_dcN_Cl = lambda parameters: par_aJ_Cl(parameters) + par_bJ_Cl(parameters) + 2 * init_vals['J_co']
 
 
-
 		# Eq 7.1
 		par_pI = lambda param: - par_pJ_Na(param) + par_pJ_Cl(param) - par_pJ_K(param)
 
@@ -410,9 +409,12 @@ class Constants:
 
 		par_dbV = lambda parameters: par_pI(parameters) + par_bI(parameters)
 
+		# How many dimensions the system has.
+		dims = len(self.variable_params)
+
 		# This is the system of 5 euqatons that is supposed to be 0
-		def system(p): 
-			f = [0] * len(p)
+		def system(p):
+			f = np.zeros(5, dtype=np.float64)
 			f[0] = par_dcN_Na(p)	# \frac{dN_{Na}^c}{dt}
 			f[1] = par_dcN_K(p)		# \frac{dN_K^c}{dt}
 			f[2] = par_dcN_Cl(p)	# \frac{dN_{Cl}^c}{dt}
@@ -420,10 +422,12 @@ class Constants:
 			f[4] = par_dbV(p)		# \frac{dV_b}{dt}
 			return f
 		
-		param = optimize.fsolve(system, self.variable_params)
+		param = least_squares(system, x0=self.variable_params, bounds=(np.zeros(dims), np.full(dims, np.inf)))
 
 		for index, key in enumerate(self.indexDict):
-			self.data[key] = param[index]
+			self.data[key] = param.x[index]
+
+		return param
 		
 
 
@@ -562,10 +566,15 @@ class AirwayModel:
 					self.data['pV'][0] = float(init_data['pV'])
 				else:
 					self.data["tV"][0] = self.data["bV"][0] - self.data["aV"][0]
+			else:
+				self.data["aV"][0] = self.fn_voltage('a')
+				self.data["bV"][0] = self.fn_voltage('b')
+				self.data["tV"][0] = self.data["bV"][0] - self.data["aV"][0]
 		else:
 			self.inputVals(special_constants)
 		
 		if special_constants is None:
+			self.data["J_co"][0] = self.fn_J_co()
 			self.co.getSteadyVals(self.data.head(1))
 
 		# Will add all of the accessibility methods
@@ -588,10 +597,7 @@ class AirwayModel:
 			self.data["H_c"][0] = self.co['CELL_H']
 			self.data["dH"][0] = self.fn_dH()
 
-			if not all(v in init_data for v in ('aV', 'bV')):
-				self.data["aV"][0] = self.fn_voltage('a')
-				self.data["bV"][0] = self.fn_voltage('b')
-				self.data["tV"][0] = self.data["bV"][0] - self.data["aV"][0]
+			# The voltage was calulated before.
 
 			self.data["p_CaCC"][0] = self.fn_p_CaCC()
 			self.data["p_CFTR"][0] = self.fn_p_CFTR()
